@@ -1,6 +1,6 @@
 tipo,pregunta,imagen,opcion1,opcion2,opcion3,opcion4,opcion5,opcion6,correcta
 single,"Durante la instalacion de una distribucion Linux, ¿cual es la UNICA particion realmente obligatoria?",,/home,swap,/,/boot,/var,/tmp, opcion3
-verdadero_falso,"La particion swap es obligatoria en toda instalacion de Linux, sin excepcion.",,Verdadero,Falso,,,,,opcion2
+verdadero_falso,"La particion HOME es obligatoria en toda instalacion de Linux, sin excepcion.",,Verdadero,Falso,,,,,opcion2
 single,¿Cual de las siguientes particiones es RECOMENDADA (no obligatoria) pero de buena practica separar del resto ,,/bin,/home,/lib,/sbin,/dev,/proc,opcion2
 single,¿Cual de los siguientes sistemas de archivos NO es nativo de Linux?,,ext4,xfs,btrfs,ntfs,,,opcion4
 single,¿Que tabla de particiones se debe usar en discos mayores a 2TB o que requieren mas de 4 particiones primarias?,,MBR,GPT,FAT32,NTFS,,,opcion2
@@ -10,7 +10,7 @@ parrafo,Observa la salida del comando 'lsblk -f'. ¿Cual es la particion que cor
 single,"Segun la imagen (salida de 'lsblk -f'), ¿que sistema de archivos tiene la particion EFI-SYSTEM?",/images/lsblk_output.png,ext4,vfat,swap,xfs,ntfs,,opcion2
 single,Observa la imagen con la salida de 'sudo fdisk -l /dev/sda'. ¿Que tipo de tabla de particiones tiene el disco?,/images/fdisk_output.png,MBR,GPT,No tiene tabla de particiones,ext4,,,opcion2
 single,"Segun la imagen de 'fdisk -l' (fdisk_output.png), indica el tamaño aproximado y el tipo de la particion /dev/sda5.",/images/fdisk_output.png,,,,,,,"7G, Linux swap."
-single,"Segun la imagen de 'df -h' (df_output.png), ¿cual es el punto de montaje que tiene MAYOR porcentaje de uso?",images/df_output.png,/,/home,/boot,/boot/efi,/dev/shm,,opcion1
+single,"Segun la imagen de 'df -h' (df_output.png), ¿cual es el punto de montaje que tiene MAYOR porcentaje de uso?",/images/df_output.png,/,/home,/boot,/boot/efi,/dev/shm,,opcion1
 single,¿Que directorio del sistema de archivos Linux (FHS) contiene los archivos de configuracion del sistema?,,/etc,/bin,/var,/tmp,/opt,/dev,opcion1
 single,"¿Que directorio almacena archivos variables como logs, colas de correo y cache?",,/usr,/var,/lib,/root,/srv,/media,opcion2
 single,¿Que directorio contiene los archivos personales (home) del usuario root?,,/home/root,/root,/usr/root,/etc/root,/var/root,/root/home,opcion2
