@@ -87,6 +87,8 @@ Todos están al principio del `<script>` de `index.html`, en el objeto `CONFIG`:
 | `SHUFFLE_QUESTIONS` / `SHUFFLE_OPTIONS` | Orden aleatorio de preguntas y de opciones |
 | `PASSING_PERCENT` | Porcentaje mínimo para figurar como "Aprobado" |
 | `SHOW_REVIEW_AT_END` | Si al final se muestra qué respondió el alumno vs. la respuesta correcta |
+| `COLLECT_STUDENT_EMAIL` | Si pide correo institucional además del nombre (ver "Correo institucional del alumno y aviso de resultados") |
+| `STUDENT_EMAIL_DOMAIN` | Dominio obligatorio para ese correo (ej. `"@sanluis.edu.ar"`), o `""` para no exigir ninguno |
 | `SHEET_WEB_APP_URL` | URL del Web App de `Code.gs` para mandar resultados a una Sheet / correo |
 | `QUESTIONS_CSV_URL` | URL o ruta de un CSV externo con las preguntas (ver más abajo) |
 | `QUESTIONS` | Array de preguntas por defecto (se usa si no hay CSV ni `questions.js`). Ver "Tipos de pregunta" más abajo para el formato de cada una |
@@ -215,7 +217,7 @@ El quiz puede mandar cada resultado a una Google Sheet tuya en cuanto el alumno 
 8. Copiá la URL que termina en `/exec`.
 9. Pegá esa URL en `SHEET_WEB_APP_URL` dentro de `index.html`.
 
-Cada vez que un alumno termina el examen (por tiempo, por una violación detectada, o por "Finalizar"), se agrega una fila con fecha, nombre, puntaje, porcentaje, si aprobó, cuántas advertencias tuvo, **el motivo de finalización** (normal / tiempo agotado / cerrado por actividad no permitida), y el detalle de qué respondió en cada pregunta. Si activaste el correo, te llega un aviso con ese mismo resumen apenas se envía.
+Cada vez que un alumno termina el examen (por tiempo, por una violación detectada, o por "Finalizar"), se agrega una fila con fecha, nombre, correo (si `COLLECT_STUDENT_EMAIL` está activo), puntaje, porcentaje, si aprobó, cuántas advertencias tuvo, **el motivo de finalización** (normal / tiempo agotado / cerrado por actividad no permitida), el detalle de qué respondió en cada pregunta, y columnas para el seguimiento de la corrección (`Corregido`, `Nota final (manual)`, `Comentario docente`, `Resultado enviado`). Si activaste el correo, te llega un aviso con ese mismo resumen apenas se envía. Ver "Correo institucional del alumno y aviso de resultados" más abajo para el detalle de cómo mandarle el resultado final al alumno una vez corregido.
 
 Si más adelante modificás `Code.gs`, tenés que volver a **Implementar → Administrar implementaciones → Editar → Nueva versión** para que los cambios se apliquen (la URL se mantiene igual).
 
@@ -237,6 +239,38 @@ Si aun así no funciona, revisá en orden:
 Como el envío desde el examen usa `fetch(..., {mode:'no-cors'})` (necesario porque Apps Script no soporta el preflight de CORS normal), el navegador del alumno **nunca sabe si en verdad funcionó** — por eso, para diagnosticar, conviene usar el botón de prueba o mirar directamente el historial de ejecuciones en Apps Script, en vez de confiar en lo que dice el examen.
 
 **Nota técnica:** el envío usa `fetch(..., {mode:'no-cors'})` porque Apps Script no maneja el "preflight" que exige el modo normal de CORS. Esto significa que el quiz no puede confirmar con certeza que Google procesó el dato — solo si la solicitud salió de la red o no. Por eso, si `SHOW_REVIEW_AT_END` está activo, el alumno también ve su resultado en pantalla como respaldo.
+
+## Correo institucional del alumno y aviso de resultados
+
+Además del nombre, el examen puede pedirle al alumno su correo institucional (validando el dominio) y usarlo para mandarle, por correo, la confirmación de que entregó el examen y — más adelante, cuando vos lo corrijas — su resultado final.
+
+**Configuración en `index.html`:**
+
+| Valor | Qué hace |
+|---|---|
+| `COLLECT_STUDENT_EMAIL` | Si es `true` (por defecto), pide el correo junto con el nombre antes de "Comenzar examen" |
+| `STUDENT_EMAIL_DOMAIN` | Dominio institucional obligatorio, con el `@` incluido (ej. `"@sanluis.edu.ar"`). El examen no deja avanzar si el correo no termina exactamente con ese dominio. Dejalo en `""` para aceptar cualquier correo válido, sin restricción |
+
+Esto no reemplaza nada de lo explicado en "Recibir resultados en una planilla": sigue siendo `Code.gs` el que hace todo el trabajo del lado del servidor. Con el correo del alumno sumado, `Code.gs` ahora hace dos envíos distintos:
+
+### 1. Confirmación de entrega (automática, inmediata)
+
+Apenas el alumno termina el examen (normal, por tiempo, o por una violación), si cargó un correo válido recibe un mail confirmando que la entrega llegó — **sin la nota**, para no revelar el resultado antes de que lo revises. Se controla con `SEND_STUDENT_CONFIRMATION_EMAIL` en `Code.gs` (`true` por defecto).
+
+### 2. Resultado final (manual, cuando vos lo decidas)
+
+La planilla ahora tiene columnas nuevas: `Email`, `Corregido`, `Nota final (manual)`, `Comentario docente`, `Resultado enviado` y `Fecha envío resultado`.
+
+- Si el examen **no tiene preguntas de tipo `text`** (100% autocorregido), la fila llega con `Corregido = Sí` de una, así que podés mandar el resultado apenas quieras.
+- Si el examen **sí tiene preguntas de tipo `text`** (desarrollo), la fila llega con `Corregido = No`: revisala a mano y, cuando estés conforme, cambiá esa celda a `Sí`. Opcionalmente completá también:
+  - `Nota final (manual)`: si la dejás vacía, el correo usa el puntaje automático (`Puntaje/Total`); si escribís algo acá (por ejemplo `8/10` o `Aprobado con observaciones`), eso es lo que se manda en su lugar.
+  - `Comentario docente`: texto libre opcional que se agrega al correo del alumno.
+
+Cuando tengas una o más filas listas (`Corregido = Sí` y `Resultado enviado` todavía en `No`), abrí la Google Sheet y andá al menú **📩 Exámenes → Enviar resultados a los alumnos corregidos**. Eso manda el correo de resultado a cada alumno pendiente y marca esas filas como `Resultado enviado = Sí`, para no duplicar envíos si volvés a correrlo. Al final te muestra un resumen de cuántos correos se mandaron.
+
+> Si no ves el menú "📩 Exámenes" en la planilla, recargá la pestaña de la Google Sheet (no la del editor de Apps Script) después de pegar/actualizar `Code.gs` — el menú se crea al abrir la planilla (`onOpen`).
+
+**Si ya tenías una planilla de una versión anterior** (sin estas columnas), las filas viejas quedan tal cual; actualizá a mano el encabezado de la fila 1 con las columnas nuevas para que las filas siguientes queden alineadas, o empezá una pestaña/planilla nueva.
 
 ## Cómo subirlo a GitHub (para compartir un link)
 

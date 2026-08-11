@@ -236,6 +236,8 @@
     <p id="instructions"></p>
     <ul class="rules" id="rules"></ul>
     <input type="text" class="field" id="field-name" placeholder="Nombre y apellido" style="display:none;">
+    <input type="email" class="field" id="field-email" placeholder="Correo institucional" style="display:none;" autocomplete="email">
+    <p id="email-error" style="display:none;font-size:12px;color:var(--alert);margin:-10px 0 14px;line-height:1.4;"></p>
     <button class="btn" id="btn-start">Comenzar examen</button>
     <p id="note"></p>
     <button class="btn secondary small" id="btn-test-sheet" style="display:none;margin-top:14px;">Probar conexión con la planilla</button>
@@ -366,6 +368,21 @@ const CONFIG = {
   // manda junto con el resultado a la planilla configurada abajo.
   COLLECT_STUDENT_NAME: true,
 
+  // Si es true, además del nombre pide un correo electrónico antes de
+  // "Comenzar examen". Ese correo se manda junto con el resultado a la
+  // planilla, y Code.gs lo usa para mandarle al alumno un correo de
+  // confirmación de entrega apenas termina, y otro con su resultado
+  // final cuando el profesor lo marque como corregido (ver README,
+  // sección "Correo institucional del alumno y aviso de resultados").
+  COLLECT_STUDENT_EMAIL: true,
+
+  // Dominio institucional obligatorio para el correo del alumno (con
+  // el "@" incluido). El examen no deja avanzar si el correo ingresado
+  // no termina exactamente con este dominio. Dejalo en "" ("") para
+  // aceptar cualquier dirección de correo válida, sin restricción de
+  // dominio.
+  STUDENT_EMAIL_DOMAIN: "@sanluis.edu.ar",
+
   // URL del Web App de Google Apps Script (ver README, sección "Recibir
   // resultados en una planilla"). Dejala vacía ("") si todavía no la
   // configuraste: el examen funciona igual, solo que no envía nada.
@@ -418,21 +435,12 @@ const CONFIG = {
        questionsCsvUrl: "materias/irci2t.csv"
      },
      {
-        code: "MANTMSBLOQ2026",
+        code: "MANTMS2026",
         title: "Examen de Mantenimiento de SW / PARTE 1",
         instructions: "Segundo Trimestre : Instalacion de S.O / Organizacion de S.O / Rutas Absolutas y Relativas / Instalacion de Programas ",
        timeLimitMinutes: 60,
         passingPercent: 70,
        questionsCsvUrl: "materias/examensw-2t.csv"
-     }
-     ,
-     {
-        code: "MANTMHREC2026",
-        title: "Examen de Mantenimiento de HW",
-        instructions: "Examen 2t : Proceso de Arranque, FUente de Alimentacion, Diagnostico y Fallas.",
-       timeLimitMinutes: 60,
-        passingPercent: 70,
-       questionsCsvUrl: "materias/recmantenimiento_hw2t.csv"
      }
   ],
 
@@ -531,6 +539,7 @@ let fullscreenActive = false;
 let lastIncidentAt = 0;
 let submitted = false;
 let studentName = "";
+let studentEmail = "";
 let questionsReady = false;
 let quizStartedAt = 0;
 
@@ -718,6 +727,20 @@ function initConsent(){
   });
 }
 
+/* ---------- Validación del correo del alumno ----------
+   Exige formato de email válido y, si CONFIG.STUDENT_EMAIL_DOMAIN no
+   está vacío, que termine exactamente con ese dominio (sin importar
+   mayúsculas/minúsculas). ------------------------------------------- */
+function isValidStudentEmail(value){
+  if(!value) return false;
+  const basicFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!basicFormat.test(value)) return false;
+  if(CONFIG.STUDENT_EMAIL_DOMAIN){
+    return value.toLowerCase().endsWith(CONFIG.STUDENT_EMAIL_DOMAIN.toLowerCase());
+  }
+  return true;
+}
+
 /* ---------- Pantalla de inicio ---------- */
 function renderStartScreenTexts(){
   document.title = CONFIG.TITLE;
@@ -740,6 +763,13 @@ function renderStartScreenTexts(){
   if(CONFIG.COLLECT_STUDENT_NAME){
     el("field-name").style.display = "block";
   }
+
+  if(CONFIG.COLLECT_STUDENT_EMAIL){
+    el("field-email").style.display = "block";
+    el("field-email").placeholder = CONFIG.STUDENT_EMAIL_DOMAIN
+      ? `Correo institucional (nombre${CONFIG.STUDENT_EMAIL_DOMAIN})`
+      : "Correo electrónico";
+  }
 }
 
 function initStartScreen(){
@@ -757,6 +787,21 @@ function initStartScreen(){
         return;
       }
       studentName = val;
+    }
+    if(CONFIG.COLLECT_STUDENT_EMAIL){
+      const valEmail = el("field-email").value.trim();
+      if(!isValidStudentEmail(valEmail)){
+        el("field-email").focus();
+        el("field-email").style.boxShadow = "inset 0 0 0 2px var(--alert)";
+        el("email-error").style.display = "block";
+        el("email-error").textContent = CONFIG.STUDENT_EMAIL_DOMAIN
+          ? `Ingresá tu correo institucional válido (tiene que terminar en "${CONFIG.STUDENT_EMAIL_DOMAIN}").`
+          : "Ingresá un correo electrónico válido.";
+        return;
+      }
+      el("field-email").style.boxShadow = "";
+      el("email-error").style.display = "none";
+      studentEmail = valEmail.toLowerCase();
     }
     startQuiz();
   });
@@ -868,9 +913,12 @@ function initSheetTestButton(){
           `✓ Conectado a la planilla "${data.planilla}". ` +
           (data.avisoPorCorreoActivado
             ? (data.teacherEmailConfigurado
-                ? "El aviso por correo está activado y configurado."
-                : "El aviso por correo está activado, pero falta completar TEACHER_EMAIL en Code.gs (por ahora no se manda ningún correo).")
-            : "El aviso por correo está desactivado (SEND_EMAIL_NOTIFICATION = false).");
+                ? "El aviso por correo al profesor está activado y configurado. "
+                : "El aviso por correo al profesor está activado, pero falta completar TEACHER_EMAIL en Code.gs (por ahora no se manda ningún correo). ")
+            : "El aviso por correo al profesor está desactivado (SEND_EMAIL_NOTIFICATION = false). ") +
+          (data.avisoAlumnoActivado
+            ? "El correo de confirmación al alumno también está activado."
+            : "El correo de confirmación al alumno está desactivado (SEND_STUDENT_CONFIRMATION_EMAIL = false).");
         status.style.color = "var(--ok)";
       } else {
         status.textContent = "El Web App respondió, pero con un formato inesperado. Revisá que Code.gs sea la versión más reciente y que se haya vuelto a implementar (Implementar → Administrar implementaciones → Editar → Nueva versión).";
@@ -1222,14 +1270,16 @@ function finishQuiz(reason){
     timestamp: new Date().toISOString(),
     exam: CONFIG.TITLE,
     student: studentName,
+    email: studentEmail,
     score: correct,
     total: total,
     percent: percent,
     passed: passed,
     warnings: warnings,
     closeReason: closeReasonText,
+    hasManualQuestions: hasManualQuestions,
     answers: quizQuestions.map(q => answerSummary(q))
-  });
+  }, hasManualQuestions);
 
   if(CONFIG.SHOW_REVIEW_AT_END){
     el("review").innerHTML = quizQuestions.map((q, i) => {
@@ -1290,8 +1340,12 @@ function reviewTextFor(q){
 }
 
 /* ---------- Envío del resultado a Google Sheets ---------- */
-function sendResultsToSheet(payload){
+function sendResultsToSheet(payload, hasManualQuestions){
   const statusEl = el("send-status");
+
+  const emailNote = (CONFIG.COLLECT_STUDENT_EMAIL && payload.email)
+    ? ` Te mandamos un correo de confirmación a ${payload.email}; el del resultado final llega aparte cuando el profesor lo corrija${hasManualQuestions ? " (este examen tiene preguntas de desarrollo, así que la corrección puede tardar un poco más)" : ""}.`
+    : "";
 
   if(!CONFIG.SHEET_WEB_APP_URL){
     statusEl.textContent = "";
@@ -1309,7 +1363,7 @@ function sendResultsToSheet(payload){
     mode: "no-cors",
     body: JSON.stringify(payload)
   }).then(() => {
-    statusEl.textContent = "Resultado enviado a la planilla del profesor.";
+    statusEl.textContent = "Resultado enviado a la planilla del profesor." + emailNote;
     statusEl.className = "ok";
   }).catch(() => {
     statusEl.textContent = "No se pudo enviar el resultado (revisá tu conexión). Mostrale esta pantalla al profesor por las dudas.";
