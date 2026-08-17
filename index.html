@@ -348,6 +348,19 @@ const CONFIG = {
   // enviar el examen automáticamente.
   MAX_WARNINGS: 3,
 
+  // Período de gracia (en milisegundos) antes de contar una pérdida de
+  // foco/visibilidad como incidente real. El navegador no puede saber
+  // POR QUÉ la ventana perdió el foco: un aviso de batería, un
+  // antivirus u otro programa que se asoma un instante disparan el
+  // mismo evento que si el alumno cambiara de pestaña a propósito. Con
+  // este margen, si la ventana vuelve a estar activa antes de que se
+  // cumpla el plazo, no se cuenta nada; si sigue fuera de foco pasado
+  // ese tiempo, sí se cuenta (y sí cierra el examen si ZERO_TOLERANCE
+  // está en true). 2500 = 2,5 segundos suele alcanzar para filtrar
+  // notificaciones cortas sin dejar de detectar una salida real. Poné
+  // 0 para volver al comportamiento anterior (instantáneo).
+  INCIDENT_GRACE_MS: 2500,
+
   // Si es true, exige pantalla completa para poder rendir (en dispositivos
   // que la soportan; ver aviso sobre iPhone/iPad más abajo en el mensaje).
   REQUIRE_FULLSCREEN: true,
@@ -1450,15 +1463,49 @@ function registerIncident(reason){
   }
 }
 
+// Incidente "pendiente": se agenda apenas se pierde el foco/visibilidad,
+// pero recién se cuenta como real si sigue así pasado INCIDENT_GRACE_MS.
+// Esto filtra los blips cortos típicos de notificaciones del sistema
+// (batería, otro programa robando el foco un instante) sin dejar de
+// detectar cuando el alumno realmente se va a otra pestaña/app.
+let pendingIncidentTimer = null;
+
+function scheduleIncident(reason){
+  if(submitted || !inQuizScreen()) return;
+  if(pendingIncidentTimer) return; // ya hay uno programado, no duplicar
+  pendingIncidentTimer = setTimeout(() => {
+    pendingIncidentTimer = null;
+    // Revalidar justo antes de contar: si para cuando se cumple el
+    // plazo ya volvió el foco y la visibilidad, no se cuenta nada.
+    if(!document.hidden && document.hasFocus()) return;
+    registerIncident(reason);
+  }, CONFIG.INCIDENT_GRACE_MS || 0);
+}
+
+function cancelPendingIncident(){
+  if(pendingIncidentTimer){
+    clearTimeout(pendingIncidentTimer);
+    pendingIncidentTimer = null;
+  }
+}
+
 document.addEventListener("visibilitychange", () => {
-  if(document.hidden) registerIncident("visibility");
+  if(document.hidden){
+    scheduleIncident("visibility");
+  } else {
+    cancelPendingIncident();
+  }
 });
 
 window.addEventListener("blur", () => {
   // Si ya está oculto/perdió visibilidad, visibilitychange ya lo cuenta;
   // esto cubre además la pérdida de foco sin cambiar de pestaña (ej. clic
   // en otra ventana/app mientras esta sigue visible).
-  if(!document.hidden) registerIncident("blur");
+  if(!document.hidden) scheduleIncident("blur");
+});
+
+window.addEventListener("focus", () => {
+  cancelPendingIncident();
 });
 
 ["fullscreenchange", "webkitfullscreenchange", "msfullscreenchange"].forEach(evt => {
