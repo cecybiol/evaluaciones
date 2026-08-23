@@ -486,6 +486,14 @@ const CONFIG = {
        timeLimitMinutes: 60,
         passingPercent: 70,
        questionsCsvUrl: "materias/recmantenimientohwoptimizdao.csv"
+     },
+     {
+        code: "RECMS2026",
+        title: "Examen Recuperatorio de Mantenimiento de SW ",
+        instructions: "Segundo Trimestre : Instalacion de S.O / Organizacion de S.O / Rutas Absolutas y Relativas / Instalacion de Programas",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/sw_rec25.csv"
      }
   ],
 
@@ -587,6 +595,11 @@ let studentName = "";
 let studentEmail = "";
 let questionsReady = false;
 let quizStartedAt = 0;
+// Se pone en true mientras hay un diálogo nativo (confirm/alert) propio
+// del examen abierto. Ese diálogo también dispara "blur" en la ventana,
+// y sin este flag el detector de salida lo cuenta como que el alumno se
+// fue del examen — incluso si después cancela el diálogo.
+let suppressIncidents = false;
 
 const el = (id) => document.getElementById(id);
 
@@ -1259,11 +1272,79 @@ el("btn-next").addEventListener("click", () => {
     renderQuestion();
     renderDots();
   } else {
-    if(confirm("¿Confirmás que querés finalizar el examen? No vas a poder modificar tus respuestas después.")){
+    const confirmed = guardedConfirm("¿Confirmás que querés finalizar el examen? No vas a poder modificar tus respuestas después.");
+    if(confirmed){
+      // Termina de una: finishQuiz marca submitted = true, y eso ya
+      // alcanza para que registerIncident() no cuente nada más, así
+      // que no hace falta seguir suprimiendo incidentes a mano.
+      suppressIncidents = false;
       finishQuiz("manual");
+    } else {
+      // El alumno canceló: sigue rindiendo. handleFinishCancelled()
+      // decide si hace falta volver a pedir pantalla completa antes
+      // de reactivar la detección de incidentes.
+      handleFinishCancelled();
     }
   }
 });
+
+// Wrapper para confirm() usado DENTRO del propio examen (por ejemplo, al
+// finalizar). Mostrar un diálogo nativo le quita el foco a la ventana un
+// instante, lo cual dispara "blur" (y saca al navegador de pantalla
+// completa) igual que si el alumno se hubiera ido a otra pestaña. Sin
+// este wrapper, eso se contaba como violación (con ZERO_TOLERANCE,
+// cerraba el examen automáticamente) sin importar si el alumno
+// terminaba aceptando o cancelando el diálogo.
+//
+// OJO: acá solo ACTIVAMOS la supresión antes de mostrar el diálogo. Es
+// el llamador (el handler de "btn-next") el que decide cuándo
+// desactivarla, porque si el alumno cancela hace falta esperar a que
+// vuelva a pantalla completa (ver handleFinishCancelled) antes de
+// reactivar la detección — un setTimeout fijo no alcanza a cubrir ese
+// tiempo de forma confiable.
+function guardedConfirm(message){
+  suppressIncidents = true;
+  cancelPendingIncident();
+  return window.confirm(message);
+}
+
+// Se llama cuando el alumno canceló la confirmación de "Finalizar
+// examen" y sigue rindiendo. El propio diálogo nativo de confirm() ya
+// sacó al navegador de pantalla completa (comportamiento del
+// navegador, no se puede evitar) — y, a diferencia de otros casos, acá
+// NO alcanza con volver a llamar a requestFullscreen() de forma
+// automática: los navegadores exigen un gesto de clic "fresco" para
+// reactivar pantalla completa, y ese gesto ya se consumió al mostrar
+// el diálogo nativo. Si lo intentábamos solos, el pedido fallaba en
+// silencio (requestFullscreen().catch(()=>{})), el examen quedaba
+// "SIN ASEGURAR" sin que el alumno lo supiera, y el próximo cambio de
+// pantalla completa (por ejemplo el que dispara este mismo cancelar)
+// se registraba como una violación real — con ZERO_TOLERANCE, eso
+// sacaba al alumno del botón "Volver al examen" y cerraba el examen
+// solo, aunque el alumno hubiera cancelado literalmente para seguir
+// rindiendo.
+//
+// La solución: mantenemos la detección de incidentes suprimida y le
+// mostramos al alumno un aviso neutral (no cuenta como advertencia)
+// con un botón para volver a pantalla completa. Ese clic sí es un
+// gesto válido, así que requestFullscreen() funciona ahí adentro sin
+// problema (ver el handler de "btn-resume").
+function handleFinishCancelled(){
+  if(CONFIG.REQUIRE_FULLSCREEN && supportsFullscreen() && !isFullscreen()){
+    el("overlay-title").textContent = "Volvé a pantalla completa";
+    el("overlay-msg").textContent = "Cancelaste la entrega, no pasa nada — pero para seguir rindiendo necesitamos que vuelvas a pantalla completa. Tocá el botón para continuar.";
+    el("btn-resume").style.display = "";
+    el("overlay").style.display = "flex";
+    // suppressIncidents queda en true (lo dejó así guardedConfirm):
+    // no se cuenta nada mientras este aviso esté visible. Se reactiva
+    // recién cuando el alumno hace clic en "Volver al examen".
+  } else {
+    // No hace falta pantalla completa (no está requerida, el
+    // navegador no la soporta, o ya seguía en pantalla completa):
+    // no hay nada más que esperar, reactivamos de una.
+    suppressIncidents = false;
+  }
+}
 
 /* ---------- Finalizar y resultados ---------- */
 const CLOSE_REASON_TEXT = {
@@ -1428,7 +1509,7 @@ function inQuizScreen(){
 }
 
 function registerIncident(reason){
-  if(submitted || !inQuizScreen()) return;
+  if(submitted || !inQuizScreen() || suppressIncidents) return;
   // Período de gracia justo después de arrancar: evita falsos positivos
   // por el propio pedido de pantalla completa o el cambio de pantalla inicial.
   if(Date.now() - quizStartedAt < 1200) return;
@@ -1471,12 +1552,15 @@ function registerIncident(reason){
 let pendingIncidentTimer = null;
 
 function scheduleIncident(reason){
-  if(submitted || !inQuizScreen()) return;
+  if(submitted || !inQuizScreen() || suppressIncidents) return;
   if(pendingIncidentTimer) return; // ya hay uno programado, no duplicar
   pendingIncidentTimer = setTimeout(() => {
     pendingIncidentTimer = null;
     // Revalidar justo antes de contar: si para cuando se cumple el
-    // plazo ya volvió el foco y la visibilidad, no se cuenta nada.
+    // plazo ya volvió el foco y la visibilidad, o si mientras tanto se
+    // abrió un diálogo propio del examen (ver guardedConfirm), no se
+    // cuenta nada.
+    if(suppressIncidents) return;
     if(!document.hidden && document.hasFocus()) return;
     registerIncident(reason);
   }, CONFIG.INCIDENT_GRACE_MS || 0);
@@ -1529,6 +1613,11 @@ window.addEventListener("focus", () => {
 el("btn-resume").addEventListener("click", () => {
   el("overlay").style.display = "none";
   if(CONFIG.REQUIRE_FULLSCREEN && supportsFullscreen()) requestFullscreen();
+  // Este clic es un gesto real del alumno: es un buen momento para
+  // garantizar que la detección de incidentes vuelva a estar activa,
+  // sin importar por qué se había suprimido (cubre tanto el caso de
+  // "canceló finalizar" como cualquier otro uso futuro de este botón).
+  suppressIncidents = false;
 });
 
 /* ---------- Bloqueo de copiar / clic derecho / atajos ---------- */
