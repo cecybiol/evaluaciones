@@ -354,12 +354,15 @@ const CONFIG = {
   // antivirus u otro programa que se asoma un instante disparan el
   // mismo evento que si el alumno cambiara de pestaña a propósito. Con
   // este margen, si la ventana vuelve a estar activa antes de que se
-  // cumpla el plazo, no se cuenta nada; si sigue fuera de foco pasado
-  // ese tiempo, sí se cuenta (y sí cierra el examen si ZERO_TOLERANCE
-  // está en true). 2500 = 2,5 segundos suele alcanzar para filtrar
-  // notificaciones cortas sin dejar de detectar una salida real. Poné
-  // 0 para volver al comportamiento anterior (instantáneo).
-  INCIDENT_GRACE_MS: 2500,
+  // cumpla el plazo, no se cuenta nada como advertencia (aunque sí
+  // queda registrada como "salida breve", ver quickExits más abajo en
+  // el código); si sigue fuera de foco pasado ese tiempo, sí se cuenta
+  // como advertencia real (y cierra el examen si ZERO_TOLERANCE está en
+  // true). 1500 = 1,5 segundos, ajustado para reducir la ventana de
+  // "mirar y volver" sin contar como advertencia, aceptando algo más de
+  // riesgo de falsos positivos que con un margen más largo. Poné 0 para
+  // volver al comportamiento anterior (instantáneo, sin margen).
+  INCIDENT_GRACE_MS: 1500,
 
   // Si es true, exige pantalla completa para poder rendir (en dispositivos
   // que la soportan; ver aviso sobre iPhone/iPad más abajo en el mensaje).
@@ -600,6 +603,40 @@ let quizStartedAt = 0;
 // y sin este flag el detector de salida lo cuenta como que el alumno se
 // fue del examen — incluso si después cancela el diálogo.
 let suppressIncidents = false;
+// Cuenta las veces que se perdió el foco/visibilidad y volvió ANTES de
+// que se cumpliera INCIDENT_GRACE_MS (no llegan a ser una advertencia
+// real, así que no cuentan para MAX_WARNINGS ni cierran el examen con
+// ZERO_TOLERANCE — el margen de gracia sigue filtrando falsos positivos
+// igual que antes). Solo queda registrado como dato informativo para el
+// profesor, junto con el resto del resultado.
+let quickExits = 0;
+// Detector HEURÍSTICO (no confiable al 100%) de herramientas de
+// desarrollador abiertas: cuando devtools se abre anclado dentro de la
+// misma ventana, el navegador achica el viewport (innerWidth/innerHeight)
+// pero no el tamaño externo de la ventana (outerWidth/outerHeight) — esa
+// diferencia es la señal que revisamos. OJO: puede dar falsos positivos
+// (zoom del navegador, ciertas barras de herramientas, ventanas
+// angostas) y se esquiva fácil abriendo devtools en una ventana aparte
+// en vez de anclada. Por eso, a diferencia de blur/fullscreen, esto NO
+// cuenta como advertencia ni cierra el examen: solo se informa al
+// profesor como dato adicional para que lo evalúe caso por caso.
+const DEVTOOLS_SIZE_THRESHOLD = 160;
+let devToolsSuspected = 0;
+let devToolsHeuristicOpen = false;
+let devToolsCheckInterval = null;
+
+function checkDevToolsHeuristic(){
+  if(submitted || !inQuizScreen()) return;
+  const widthDiff = window.outerWidth - window.innerWidth;
+  const heightDiff = window.outerHeight - window.innerHeight;
+  const suspected = widthDiff > DEVTOOLS_SIZE_THRESHOLD || heightDiff > DEVTOOLS_SIZE_THRESHOLD;
+  if(suspected && !devToolsHeuristicOpen){
+    devToolsHeuristicOpen = true;
+    devToolsSuspected++;
+  } else if(!suspected){
+    devToolsHeuristicOpen = false;
+  }
+}
 
 const el = (id) => document.getElementById(id);
 
@@ -1092,6 +1129,9 @@ function startQuiz(){
   quizQuestions = qs;
   currentIndex = 0;
   warnings = 0;
+  quickExits = 0;
+  devToolsSuspected = 0;
+  devToolsHeuristicOpen = false;
   submitted = false;
   quizStartedAt = Date.now();
 
@@ -1103,6 +1143,9 @@ function startQuiz(){
   endTimestamp = Date.now() + CONFIG.TIME_LIMIT_MINUTES * 60000;
   timerInterval = setInterval(updateTimer, 250);
   updateTimer();
+
+  devToolsCheckInterval = setInterval(checkDevToolsHeuristic, 1000);
+  checkDevToolsHeuristic();
 
   renderDots();
   renderQuestion();
@@ -1358,6 +1401,7 @@ function finishQuiz(reason){
   reason = reason || "manual";
   submitted = true;
   clearInterval(timerInterval);
+  clearInterval(devToolsCheckInterval);
   window.removeEventListener("beforeunload", onBeforeUnload);
   exitFullscreen();
 
@@ -1402,6 +1446,8 @@ function finishQuiz(reason){
     percent: percent,
     passed: passed,
     warnings: warnings,
+    quickExits: quickExits,
+    devToolsSuspected: devToolsSuspected,
     closeReason: closeReasonText,
     hasManualQuestions: hasManualQuestions,
     answers: quizQuestions.map(q => answerSummary(q))
@@ -1570,6 +1616,10 @@ function cancelPendingIncident(){
   if(pendingIncidentTimer){
     clearTimeout(pendingIncidentTimer);
     pendingIncidentTimer = null;
+    // Si había un incidente agendado y se canceló porque el alumno volvió
+    // a tiempo, es una "salida breve": no cuenta como advertencia, pero
+    // queda registrada para el profesor (ver declaración de quickExits).
+    if(inQuizScreen() && !submitted) quickExits++;
   }
 }
 
