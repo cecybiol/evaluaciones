@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Examen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#151d27;
+    --ink-soft:#1f2b3a;
+    --ink-line:#2c3b4d;
+    --paper:#ece3c9;
+    --paper-dim:#d9cca4;
+    --seal:#b8863b;
+    --seal-deep:#8a5f28;
+    --alert:#a8433f;
+    --alert-soft:#3a2323;
+    --ok:#4c8c6b;
+    --ok-soft:#1e2f28;
+    --text:#eef1f4;
+    --text-dim:#9fb0be;
+    --ink-text:#241c10;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--ink);
+    color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 16px;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0 0 8px;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .card{
+    position:relative;
+    width:100%;
+    max-width:620px;
+    background:var(--paper);
+    color:var(--ink-text);
+    border-radius:10px;
+    padding:36px 32px 32px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.15);
+    overflow:hidden;
+  }
+  .ribbon{
+    position:absolute;
+    top:18px;
+    right:-46px;
+    transform:rotate(45deg);
+    width:180px;
+    text-align:center;
+    padding:5px 0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+    font-weight:500;
+    color:#fff;
+    background:var(--alert);
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+  .ribbon.on{background:var(--ok);}
+  .seal{
+    width:56px;height:56px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--seal-deep), var(--seal) 70%);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.35), inset 0 0 0 3px rgba(255,255,255,.18);
+    margin-bottom:18px;
+  }
+  .seal svg{width:26px;height:26px;fill:#2a1c08;}
+  p{line-height:1.55;color:#40372a;}
+  ul.rules{margin:14px 0 22px;padding-left:20px;color:#40372a;line-height:1.7;}
+  ul.rules li{margin-bottom:4px;}
+  .btn{
+    -webkit-user-select:none;user-select:none;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--ink);color:var(--paper);
+    border:none;border-radius:7px;
+    padding:14px 22px;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:15px;font-weight:600;letter-spacing:.01em;
+    cursor:pointer;
+    min-height:48px;
+    transition:transform .12s ease, background .12s ease;
+    width:100%;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn:hover{background:#0e141c;}
+  .btn.secondary{background:transparent;color:var(--ink-text);box-shadow:inset 0 0 0 1.5px var(--ink-text);}
+  .btn.secondary:hover{background:rgba(0,0,0,.05);}
+  .btn.small{width:auto;padding:9px 14px;font-size:13px;min-height:auto;}
+  .row{display:flex;gap:10px;}
+  .row .btn{flex:1;}
+  #note{font-size:13px;color:#6b5f47;margin-top:14px;line-height:1.5;}
+  .field{
+    width:100%;
+    -webkit-user-select:text;user-select:text;
+    padding:13px 14px;
+    border-radius:7px;
+    border:none;
+    box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.2);
+    background:rgba(255,255,255,.5);
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:15px;
+    margin-bottom:16px;
+    min-height:48px;
+  }
+  .field:focus{outline:none;box-shadow:inset 0 0 0 2px var(--seal-deep);background:#fff;}
+  #send-status{font-size:13px;margin-top:10px;color:#6b5f47;}
+  #send-status.ok{color:var(--ok);}
+  #send-status.error{color:var(--alert);}
+
+  /* --- Pantalla de examen --- */
+  .quiz-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:22px;padding-bottom:16px;border-bottom:1.5px solid rgba(0,0,0,.12);
+  }
+  .progress-dots{display:flex;gap:6px;flex-wrap:wrap;max-width:60%;}
+  .dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.18);}
+  .dot.answered{background:var(--seal-deep);}
+  .dot.current{background:var(--ink-text);transform:scale(1.3);}
+  .timer{font-size:20px;font-weight:500;}
+  .timer.low{color:var(--alert);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  .q-index{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;color:#7a6d52;text-transform:uppercase;margin-bottom:6px;}
+  .q-text{font-size:20px;margin-bottom:20px;line-height:1.4;overflow-wrap:anywhere;}
+  .options{display:flex;flex-direction:column;gap:10px;margin-bottom:26px;}
+  .option{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;border-radius:8px;
+    background:rgba(255,255,255,.4);
+    box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.15);
+    cursor:pointer;min-height:48px;
+  }
+  .option span:last-child{overflow-wrap:anywhere;}
+  .option:hover{background:rgba(255,255,255,.65);}
+  .option.selected{background:#fff;box-shadow:inset 0 0 0 2px var(--seal-deep);}
+  .option .bullet{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #6b5f47;flex:none;position:relative;}
+  .option.selected .bullet{box-shadow:inset 0 0 0 1.5px var(--seal-deep);}
+  .option.selected .bullet::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--seal-deep);}
+  .option input{display:none;}
+
+  /* --- Selección múltiple (checkbox) --- */
+  .bullet.checkbox{border-radius:5px;}
+  .option.selected .bullet.checkbox::after{border-radius:2px;}
+
+  /* --- Imagen opcional dentro de una pregunta --- */
+  .q-image-wrap{margin-bottom:18px;}
+  .q-image{
+    display:block;max-width:100%;max-height:340px;width:auto;
+    border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.25);
+    margin:0 auto;
+  }
+  .q-image-error{
+    font-size:12px;color:var(--alert);padding:10px 12px;
+    border-radius:6px;background:rgba(168,67,63,.1);
+  }
+
+  /* --- Pregunta de ordenar --- */
+  .order-hint{font-size:13px;color:#6b5f47;margin:-8px 0 14px;}
+  .order-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 14px;border-radius:8px;
+    background:rgba(255,255,255,.4);
+    box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.15);
+    margin-bottom:8px;
+  }
+  .order-num{font-family:'IBM Plex Mono',monospace;font-weight:600;width:20px;text-align:center;flex:none;color:#6b5f47;}
+  .order-text{flex:1;}
+  .order-controls{display:flex;gap:5px;flex:none;}
+  .order-btn{
+    width:32px;height:32px;border-radius:6px;border:none;
+    background:rgba(0,0,0,.08);cursor:pointer;font-size:12px;
+    -webkit-user-select:none;user-select:none;
+  }
+  .order-btn:hover:not(:disabled){background:rgba(0,0,0,.16);}
+  .order-btn:disabled{opacity:.25;cursor:default;}
+
+  /* --- Pregunta de respuesta libre / párrafo --- */
+  .text-note{font-size:12px;color:#6b5f47;margin-top:8px;}
+  textarea.field{min-height:150px;resize:vertical;line-height:1.5;padding-top:12px;}
+
+  /* --- Overlay de advertencia --- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,14,20,.94);
+    display:none;align-items:center;justify-content:center;
+    z-index:50;padding:20px;text-align:center;
+  }
+  .overlay .seal{background:radial-gradient(circle at 35% 30%, #7a2b28, var(--alert) 70%);margin:0 auto 18px;}
+  .overlay h2{color:#fff;}
+  .overlay p{color:#c9d2da;max-width:380px;margin:8px auto 22px;}
+  .overlay .btn{max-width:260px;}
+
+  /* --- Resultados --- */
+  .score-big{font-family:'Fraunces',serif;font-size:52px;font-weight:600;line-height:1;margin:6px 0 2px;}
+  .score-tag{display:inline-block;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;letter-spacing:.03em;margin-bottom:18px;}
+  .score-tag.ok{background:var(--ok-soft);color:#8fd6b3;}
+  .score-tag.fail{background:var(--alert-soft);color:#e69a97;}
+  .review-item{padding:12px 0;border-top:1px solid rgba(0,0,0,.1);font-size:14px;}
+  .review-item .rq{font-weight:600;margin-bottom:4px;overflow-wrap:anywhere;}
+  .review-item .ra{color:#5a5142;overflow-wrap:anywhere;white-space:pre-wrap;}
+  .review-item .ra.wrong{color:var(--alert);}
+  .review-item .ra.right{color:var(--ok);}
+  .review-item .ra-text{
+    display:block;margin-top:6px;padding:10px 12px;
+    background:rgba(0,0,0,.045);border-radius:6px;
+    font-size:13.5px;line-height:1.55;color:var(--ink-text);
+    overflow-wrap:anywhere;white-space:pre-wrap;
+  }
+
+  @media (max-width:480px){
+    .card{padding:26px 20px 22px;}
+    .score-big{font-size:42px;}
+    .q-text{font-size:18px;}
+  }
+  @media print{ body{display:none !important;} }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="ribbon" id="ribbon">SIN ASEGURAR</div>
+
+  <!-- PANTALLA DE INICIO -->
+  <section id="screen-start">
+    <div class="seal"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4zm-1.2 14.2L7 11.4l1.4-1.4 2.4 2.4L16.6 7l1.4 1.4-7.2 7.8z"/></svg></div>
+    <h1 id="title">Examen</h1>
+    <p id="instructions"></p>
+    <ul class="rules" id="rules"></ul>
+    <input type="text" class="field" id="field-name" placeholder="Nombre y apellido" style="display:none;">
+    <input type="email" class="field" id="field-email" placeholder="Correo institucional" style="display:none;" autocomplete="email">
+    <p id="email-error" style="display:none;font-size:12px;color:var(--alert);margin:-10px 0 14px;line-height:1.4;"></p>
+    <button class="btn" id="btn-start">Comenzar examen</button>
+    <p id="note"></p>
+    <button class="btn secondary small" id="btn-test-sheet" style="display:none;margin-top:14px;">Probar conexión con la planilla</button>
+    <p id="test-sheet-status" style="font-size:12px;margin-top:8px;"></p>
+  </section>
+
+  <!-- PANTALLA DEL EXAMEN -->
+  <section id="screen-quiz" style="display:none;">
+    <div class="quiz-header">
+      <div class="progress-dots" id="dots"></div>
+      <div class="timer mono" id="timer">--:--</div>
+    </div>
+    <div class="q-index" id="q-index">Pregunta 1 de 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-image-wrap" id="q-image-wrap" style="display:none;"></div>
+    <div class="options" id="options"></div>
+    <div class="row">
+      <button class="btn secondary" id="btn-prev">Anterior</button>
+      <button class="btn" id="btn-next">Siguiente</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE RESULTADOS -->
+  <section id="screen-results" style="display:none;">
+    <div class="seal" id="result-seal"></div>
+    <h2>Examen finalizado</h2>
+    <div class="score-big" id="score-big"></div>
+    <div class="score-tag" id="score-tag"></div>
+    <p id="warn-summary" style="font-size:13px;color:#6b5f47;"></p>
+    <p id="send-status"></p>
+    <div id="review"></div>
+  </section>
+</div>
+
+<!-- OVERLAY DE ADVERTENCIA -->
+<div class="overlay" id="overlay">
+  <div>
+    <div class="seal"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm0 5 7.5 13h-15L12 7zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z"/></svg></div>
+    <h2 id="overlay-title">Actividad fuera del examen detectada</h2>
+    <p id="overlay-msg"></p>
+    <button class="btn" id="btn-resume">Volver al examen</button>
+  </div>
+</div>
+
+<!-- CÓDIGO DE ACCESO: se muestra antes que nada si CONFIG.ACCESS_CODES_ENABLED -->
+<div class="overlay" id="screen-access" style="display:none;">
+  <div style="max-width:360px;">
+    <div class="seal"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4zm-1.2 14.2L7 11.4l1.4-1.4 2.4 2.4L16.6 7l1.4 1.4-7.2 7.8z"/></svg></div>
+    <h2>Acceso al examen</h2>
+    <p style="color:#c9d2da;font-size:14px;margin-bottom:18px;">Ingresá el código de acceso que te compartió tu profesor/a.</p>
+    <input type="text" class="field" id="access-code-input" placeholder="Código de acceso" autocomplete="off" style="text-align:center;letter-spacing:.08em;">
+    <p id="access-error" style="color:var(--alert);font-size:13px;min-height:18px;margin:10px 0 4px;"></p>
+    <button class="btn" id="btn-access-submit" style="margin-top:6px;">Ingresar</button>
+  </div>
+</div>
+
+<!-- CUADRO DE DIÁLOGO INICIAL: reglas obligatorias antes de empezar -->
+<div class="overlay" id="consent-overlay" style="display:none;">
+  <div style="max-width:420px;">
+    <div class="seal"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm0 5 7.5 13h-15L12 7zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z"/></svg></div>
+    <h2>Antes de empezar, leé esto</h2>
+    <p>Este examen se rinde en modo seguro. Mientras esté en curso:</p>
+    <ul class="rules" id="consent-rules" style="text-align:left;color:#c9d2da;max-width:380px;margin:12px auto;"></ul>
+    <label style="display:flex;gap:9px;align-items:flex-start;text-align:left;color:#c9d2da;font-size:13px;max-width:380px;margin:16px auto 20px;line-height:1.5;">
+      <input type="checkbox" id="consent-check" style="margin-top:3px;width:16px;height:16px;flex:none;">
+      <span>Entiendo estas condiciones y acepto que el examen se cierre y envíe automáticamente, tal cual esté en ese momento, si las incumplo.</span>
+    </label>
+    <button class="btn" id="btn-consent" disabled>Entiendo, continuar</button>
+  </div>
+</div>
+
+<!--
+  Carga opcional de preguntas desde un archivo externo "questions.js"
+  (para no tener que tocar este index.html cada vez que cambian las
+  preguntas). Si el archivo no existe al lado de este .html, el
+  navegador simplemente lo ignora y se usan las preguntas de más abajo.
+  Ver "questions.example.js" y el README para el formato exacto.
+-->
+<script src="questions.js"></script>
+
+<script>
+"use strict";
+
+/* ======================================================================
+   CONFIGURACIÓN DEL EXAMEN
+   Editá únicamente los valores de este bloque. No hace falta tocar
+   el resto del archivo para armar un examen nuevo.
+   ====================================================================== */
+const CONFIG = {
+  // Título que aparece en la pantalla de inicio y en la pestaña del navegador
+  TITLE: "Examen de Area Informatica",
+
+  // Texto introductorio (podés dejarlo vacío: "")
+  INSTRUCTIONS: "Este examen tiene preguntas de opción múltiple. Una vez que empieces, el sistema registrará si salís de esta ventana o de pantalla completa.",
+
+  // Duración total en minutos. Al llegar a 0 se envía automáticamente.
+  TIME_LIMIT_MINUTES: 70,
+
+  // Si es true (modo estricto, recomendado), CUALQUIER cambio de pestaña,
+  // minimización, pérdida de foco de la ventana o salida de pantalla
+  // completa cierra y envía el examen de inmediato, sin tolerancia.
+  // Si es false, se usa el modo "tolerante" clásico: se permite hasta
+  // MAX_WARNINGS incidentes antes de auto-enviar.
+  ZERO_TOLERANCE: true,
+
+  // Solo se usa si ZERO_TOLERANCE es false: cantidad de veces que se
+  // permite salir de pantalla completa / cambiar de pestaña antes de
+  // enviar el examen automáticamente.
+  MAX_WARNINGS: 3,
+
+  // Si es true, exige pantalla completa para poder rendir (en dispositivos
+  // que la soportan; ver aviso sobre iPhone/iPad más abajo en el mensaje).
+  REQUIRE_FULLSCREEN: true,
+
+  // Orden aleatorio de preguntas y de opciones dentro de cada pregunta
+  SHUFFLE_QUESTIONS: true,
+  SHUFFLE_OPTIONS: true,
+
+  // Porcentaje mínimo para considerar el examen "aprobado" en la pantalla final
+  PASSING_PERCENT: 60,
+
+  // Si es true, al final se muestra el detalle de qué respondió y cuál
+  // era la respuesta correcta en cada pregunta. Poné false si no querés
+  // revelar las respuestas correctas al terminar.
+  SHOW_REVIEW_AT_END: true,
+
+  // Si es true, pide nombre y apellido antes de "Comenzar examen" y lo
+  // manda junto con el resultado a la planilla configurada abajo.
+  COLLECT_STUDENT_NAME: true,
+
+  // Si es true, además del nombre pide un correo electrónico antes de
+  // "Comenzar examen". Ese correo se manda junto con el resultado a la
+  // planilla, y Code.gs lo usa para mandarle al alumno un correo de
+  // confirmación de entrega apenas termina, y otro con su resultado
+  // final cuando el profesor lo marque como corregido (ver README,
+  // sección "Correo institucional del alumno y aviso de resultados").
+  COLLECT_STUDENT_EMAIL: true,
+
+  // Dominio institucional obligatorio para el correo del alumno (con
+  // el "@" incluido). El examen no deja avanzar si el correo ingresado
+  // no termina exactamente con este dominio. Dejalo en "" ("") para
+  // aceptar cualquier dirección de correo válida, sin restricción de
+  // dominio.
+  STUDENT_EMAIL_DOMAIN: "@sanluis.edu.ar",
+
+  // URL del Web App de Google Apps Script (ver README, sección "Recibir
+  // resultados en una planilla"). Dejala vacía ("") si todavía no la
+  // configuraste: el examen funciona igual, solo que no envía nada.
+  SHEET_WEB_APP_URL: "https://script.google.com/macros/s/AKfycbx1YxBUvrL5fYnQUOY_Uk7mYIqSCjmB_41S7JvjGQFyN0WqNjB9ziai0N17HwhWyaP3kg/exec",
+
+  // ------------------------------------------------------------------
+  // Múltiples materias / exámenes con código de acceso (opcional).
+  //
+  // Si ACCESS_CODES_ENABLED es true y EXAMS tiene al menos un elemento,
+  // antes de mostrar cualquier otra cosa el alumno tiene que escribir
+  // un código. Ese código determina qué examen se le carga: cada
+  // elemento de EXAMS puede tener su propio título, instrucciones,
+  // tiempo límite, porcentaje de aprobación, y preguntas (inline con
+  // "questions", o desde su propio CSV con "questionsCsvUrl" — ideal
+  // si cada materia la mantiene un profesor distinto). Cualquier campo
+  // que no pongas en un examen usa el valor global de más arriba como
+  // respaldo (TITLE, INSTRUCTIONS, TIME_LIMIT_MINUTES, etc.).
+  //
+  // Con ACCESS_CODES_ENABLED en false (o EXAMS vacío), el examen
+  // funciona como siempre: sin código, un solo examen, usando TITLE /
+  // QUESTIONS / etc. de más arriba.
+  //
+  // OJO — esto NO es un sistema de autenticación seguro: es un único
+  // HTML sin backend, así que cualquiera que abra las herramientas de
+  // desarrollador del navegador puede ver el código fuente completo
+  // (incluidos los códigos y las preguntas de TODAS las materias acá
+  // definidas). Sirve para que el link no quede abierto a cualquiera,
+  // no para separar de forma segura el contenido entre grupos de
+  // alumnos técnicamente hábiles. Si necesitás esa separación real,
+  // deployá un archivo por materia (ver README).
+  // ------------------------------------------------------------------
+  ACCESS_CODES_ENABLED: true,
+
+  EXAMS: [
+    // Ejemplo — descomentá y editá, o agregá tantos como materias necesites:
+     {
+        code: "MHSEPTIMOBLOQUEADO26",
+    title: "Examen de Mantenimiento de Hardware",
+    instructions: "Examen 2t : Proceso de Arranque, FUente de Alimentacion, Diagnostico y Fallas.",
+    timeLimitMinutes: 70,
+    passingPercent: 60,
+    questionsCsvUrl: "materias/hardware.csv" 
+     },
+     {
+        code: "IRCI2TBLOQUEA26",
+        title: "Examen de IRCI",
+        instructions: "Segundo Trimestre : Motherboard, Memoria RAm y Mantenimiento de Procesador / Memoria RAM",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/irci2t.csv"
+     },
+     {
+        code: "MANTMS2026",
+        title: "Examen de Mantenimiento de SW / PARTE 1",
+        instructions: "Segundo Trimestre : Instalacion de S.O / Organizacion de S.O / Rutas Absolutas y Relativas / Instalacion de Programas ",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/examensw-2t.csv"
+     },
+     {
+        code: "MANTREC2026",
+        title: "Examen Recuperatorio de Mantenimiento de HW ",
+        instructions: "Examen 2t : Proceso de Arranque, FUente de Alimentacion, Diagnostico y Fallas.",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/recmantenimiento_hw2t.csv"
+     },
+     {
+        code: "IRCIIMG2026",
+        title: "Examen IRCI PARTE 2",
+        instructions: "Examen 2t : Identificacion de partes.",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/ircimotherboardparts.csv"
+     },
+     {
+        code: "IRCIREC2026",
+        title: "Examen Recuperatorio de IRCI PARTE 2",
+        instructions: "Segundo Trimestre : Motherboard, Memoria RAm y Mantenimiento de Procesador / Memoria RAM",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/ircirec.csv"
+     },
+     {
+        code: "MANTRECB2026",
+        title: "Examen Recuperatorio de Mantenimiento de HW ",
+        instructions: "Examen 2t : Proceso de Arranque, FUente de Alimentacion, Diagnostico y Fallas.",
+       timeLimitMinutes: 60,
+        passingPercent: 70,
+       questionsCsvUrl: "materias/recmantenimientohwoptimizdao.csv"
+     }
+  ],
+
+  // ------------------------------------------------------------------
+  // Preguntas desde un archivo externo (opcional, para automatizar).
+  // Se usan cuando NO hay código de acceso (ACCESS_CODES_ENABLED en
+  // false), o como respaldo si algún examen de EXAMS no define las
+  // suyas propias. Hay dos formas de cargar preguntas SIN tocar este
+  // archivo HTML. Se usan en este orden de prioridad:
+  //
+  //   1) QUESTIONS_CSV_URL: si completás una URL/ruta acá, el examen
+  //      intenta cargar un CSV con las preguntas (fetch por red, así
+  //      que requiere servir el sitio por http(s), no funciona abriendo
+  //      el .html directo con doble clic). Ver README y "questions.example.csv".
+  //   2) Si dejás QUESTIONS_CSV_URL vacío, y existe un archivo
+  //      "questions.js" al lado de este index.html (que define
+  //      `const QUIZ_QUESTIONS = [...]`), se usa ese archivo. Este
+  //      método SÍ funciona abriendo el .html directamente (doble clic),
+  //      sin servidor. Ver "questions.example.js".
+  //   3) Si ninguno de los dos existe/carga, se usa el array QUESTIONS
+  //      de acá abajo como último recurso.
+  // ------------------------------------------------------------------
+  QUESTIONS_CSV_URL: "",
+
+  // Lista de preguntas por defecto (se usa si no hay CSV ni questions.js).
+  // Soporta 5 tipos de pregunta — el campo "type" define cuál es; si se
+  // omite, se asume "single" (opción múltiple clásica). Ver el comentario
+  // sobre "prepareQuestion" más abajo en el código para el detalle de cada
+  // formato, o el README.
+  QUESTIONS: [
+    // --- Opción única (clásica). "correct": índice de la opción correcta, empieza en 0. ---
+    {
+      question: "¿Cuál es la capital de Francia?",
+      options: ["Madrid", "París", "Roma", "Lisboa"],
+      correct: 1
+    },
+    {
+      question: "¿Cuánto es 12 × 8?",
+      options: ["86", "96", "108", "76"],
+      correct: 1
+    },
+    {
+      question: "¿En qué continente está Egipto?",
+      options: ["Asia", "Europa", "África", "Oceanía"],
+      correct: 2
+    },
+
+    // --- Cualquier pregunta puede llevar una imagen opcional: agregá el
+    // campo "image" con una URL. Se muestra arriba de las opciones. ---
+    {
+      question: "¿A qué país pertenece esta bandera?",
+      image: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.svg",
+      options: ["Argentina", "Uruguay", "Chile", "Paraguay"],
+      correct: 0
+    },
+
+    // --- Verdadero / Falso. "correct": true o false. ---
+    {
+      type: "boolean",
+      question: "Python es un lenguaje de programación.",
+      correct: true
+    },
+
+    // --- Selección múltiple (una o más correctas). "correct": array de índices (0-based). ---
+    {
+      type: "multiple",
+      question: "¿Cuáles de estos son planetas del sistema solar?",
+      options: ["Marte", "Plutón", "Júpiter", "Sirio"],
+      correct: [0, 2]
+    },
+
+    // --- Ordenar. "items" va en el ORDEN CORRECTO; se muestra barajado al alumno. ---
+    {
+      type: "order",
+      question: "Ordená estos planetas de más cercano a más lejano del Sol.",
+      items: ["Mercurio", "Venus", "Tierra", "Marte"]
+    },
+
+    // --- Respuesta libre / párrafo. Sin corrección automática: se revisa a mano. ---
+    {
+      type: "text",
+      question: "Explicá con tus palabras por qué el cielo se ve azul."
+    }
+  ]
+};
+/* ====================== FIN DE LA CONFIGURACIÓN ======================= */
+
+
+/* ---------- Estado interno ---------- */
+let quizQuestions = [];
+let currentIndex = 0;
+let warnings = 0;
+let endTimestamp = null;
+let timerInterval = null;
+let fullscreenActive = false;
+let lastIncidentAt = 0;
+let submitted = false;
+let studentName = "";
+let studentEmail = "";
+let questionsReady = false;
+let quizStartedAt = 0;
+
+const el = (id) => document.getElementById(id);
+
+/* ---------- Carga de preguntas externas (CSV o questions.js) ---------- */
+
+// Parser CSV simple, tolera campos entre comillas con comas/saltos de línea.
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i + 1] === '"'){ field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ","){ row.push(field); field = ""; }
+      else if(c === "\n" || c === "\r"){
+        if(c === "\r" && text[i + 1] === "\n") i++;
+        row.push(field); field = "";
+        rows.push(row); row = [];
+      } else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+}
+
+// Convierte filas de CSV (con encabezado) al formato interno de preguntas.
+// Encabezados esperados: tipo, pregunta, opcion1, opcion2, ..., correcta
+// (hasta 6 columnas "opcionN"). Ver README para el detalle de cada tipo.
+// Valores válidos de "tipo" (si se omite la columna o queda vacía, es
+// "opcion_unica" para mantener compatibilidad con CSVs viejos):
+//   - opcion_unica    (por defecto): correcta = N° de opción, 1-based.
+//   - opcion_multiple: correcta = N°s de opción separados por "|", 1-based
+//                      (ej. "1|3").
+//   - verdadero_falso: correcta = "verdadero" o "falso" (las opcionN se ignoran).
+//   - ordenar:         las opcionN son los ítems EN EL ORDEN CORRECTO
+//                      (correcta se ignora).
+//   - parrafo:         respuesta libre, sin corrección automática
+//                      (opcionN y correcta se ignoran).
+function csvToQuestions(text){
+  const rows = parseCSV(text);
+  if(rows.length < 2) return [];
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const typeIdx = header.indexOf("tipo");
+  const qIdx = header.indexOf("pregunta");
+  const correctIdx = header.indexOf("correcta");
+  const imageIdx = header.indexOf("imagen");
+  const optionIdxs = header.reduce((acc, h, i) => {
+    if(h.startsWith("opcion")) acc.push(i);
+    return acc;
+  }, []);
+  if(qIdx === -1) return [];
+
+  const TYPE_ALIASES = {
+    opcion_unica: "single", opcion_multiple: "multiple", seleccion_multiple: "multiple",
+    verdadero_falso: "boolean", booleano: "boolean", vf: "boolean",
+    ordenar: "order", orden: "order",
+    parrafo: "text", texto: "text", texto_libre: "text", libre: "text"
+  };
+
+  const out = [];
+  for(let r = 1; r < rows.length; r++){
+    const row = rows[r];
+    const question = (row[qIdx] || "").trim();
+    if(!question) continue;
+
+    const rawType = typeIdx !== -1 ? (row[typeIdx] || "").trim().toLowerCase() : "";
+    const type = TYPE_ALIASES[rawType] || "single";
+    const values = optionIdxs.map(i => (row[i] || "").trim()).filter(t => t !== "");
+    const rawCorrect = correctIdx !== -1 ? (row[correctIdx] || "").trim() : "";
+    const image = imageIdx !== -1 ? (row[imageIdx] || "").trim() : "";
+
+    let q = null;
+    if(type === "multiple"){
+      const correct = rawCorrect.split("|")
+        .map(s => parseInt(s.trim(), 10) - 1)
+        .filter(n => !isNaN(n));
+      if(values.length >= 2) q = { type: "multiple", question, options: values, correct };
+    } else if(type === "boolean"){
+      const isTrue = /^(v|verdadero|true)$/i.test(rawCorrect);
+      q = { type: "boolean", question, correct: isTrue };
+    } else if(type === "order"){
+      if(values.length >= 2) q = { type: "order", question, items: values };
+    } else if(type === "text"){
+      q = { type: "text", question };
+    } else {
+      const correctNum = parseInt(rawCorrect, 10);
+      const correct = isNaN(correctNum) ? 0 : correctNum - 1;
+      if(values.length >= 2) q = { type: "single", question, options: values, correct };
+    }
+
+    if(q){
+      if(image) q.image = image;
+      out.push(q);
+    }
+  }
+  return out;
+}
+
+// Prioridad: CSV (si hay URL configurada) > questions.js externo > CONFIG.QUESTIONS.
+async function loadQuestions(){
+  if(CONFIG.QUESTIONS_CSV_URL){
+    try{
+      const res = await fetch(CONFIG.QUESTIONS_CSV_URL, { cache: "no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      const qs = csvToQuestions(text);
+      if(qs.length) return qs;
+      console.warn("El CSV de preguntas se cargó pero no tiene filas válidas; se usa el respaldo.");
+    } catch(err){
+      console.error("No se pudo cargar el CSV de preguntas, se usa el respaldo.", err);
+    }
+  }
+  if(typeof window.QUIZ_QUESTIONS !== "undefined" && Array.isArray(window.QUIZ_QUESTIONS) && window.QUIZ_QUESTIONS.length){
+    return window.QUIZ_QUESTIONS;
+  }
+  return CONFIG.QUESTIONS;
+}
+
+function updateStartButtonState(){
+  const btn = el("btn-start");
+  if(!btn) return;
+  if(questionsReady){
+    btn.disabled = false;
+    btn.textContent = "Comenzar examen";
+  } else {
+    btn.disabled = true;
+    btn.textContent = "Cargando preguntas…";
+  }
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function supportsFullscreen(){
+  const d = document.documentElement;
+  return !!(d.requestFullscreen || d.webkitRequestFullscreen || d.msRequestFullscreen);
+}
+
+function requestFullscreen(){
+  const d = document.documentElement;
+  const req = d.requestFullscreen || d.webkitRequestFullscreen || d.msRequestFullscreen;
+  if(req) req.call(d).catch(() => {});
+}
+
+function exitFullscreen(){
+  const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+  if(ex && (document.fullscreenElement || document.webkitFullscreenElement)) ex.call(document).catch(() => {});
+}
+
+function isFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+}
+
+/* ---------- Cuadro de diálogo inicial (consentimiento obligatorio) ---------- */
+function initConsent(){
+  const rules = [
+    "No podés cambiar de pestaña ni de aplicación.",
+    "No podés minimizar la ventana ni hacer que pierda el foco (por ejemplo, hacer clic afuera del navegador).",
+    CONFIG.REQUIRE_FULLSCREEN ? "No podés salir de la pantalla completa." : null,
+    "No podés copiar, pegar ni usar el clic derecho.",
+    CONFIG.ZERO_TOLERANCE
+      ? "Cualquiera de estas acciones cierra el examen de inmediato y envía tus respuestas tal cual estén en ese momento."
+      : `Estas acciones se registran como advertencia. Al llegar a ${CONFIG.MAX_WARNINGS} advertencias, el examen se cierra y se envía automáticamente.`
+  ].filter(Boolean);
+  el("consent-rules").innerHTML = rules.map(r => `<li>${r}</li>`).join("");
+
+  el("consent-check").addEventListener("change", (e) => {
+    el("btn-consent").disabled = !e.target.checked;
+  });
+  el("btn-consent").addEventListener("click", () => {
+    el("consent-overlay").style.display = "none";
+  });
+}
+
+/* ---------- Validación del correo del alumno ----------
+   Exige formato de email válido y, si CONFIG.STUDENT_EMAIL_DOMAIN no
+   está vacío, que termine exactamente con ese dominio (sin importar
+   mayúsculas/minúsculas). ------------------------------------------- */
+function isValidStudentEmail(value){
+  if(!value) return false;
+  const basicFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!basicFormat.test(value)) return false;
+  if(CONFIG.STUDENT_EMAIL_DOMAIN){
+    return value.toLowerCase().endsWith(CONFIG.STUDENT_EMAIL_DOMAIN.toLowerCase());
+  }
+  return true;
+}
+
+/* ---------- Pantalla de inicio ---------- */
+function renderStartScreenTexts(){
+  document.title = CONFIG.TITLE;
+  el("title").textContent = CONFIG.TITLE;
+  el("instructions").textContent = CONFIG.INSTRUCTIONS;
+
+  const rules = [];
+  rules.push(`Tenés ${CONFIG.TIME_LIMIT_MINUTES} minutos para completar el examen.`);
+  if(CONFIG.REQUIRE_FULLSCREEN) rules.push("El examen se abre en pantalla completa y debe permanecer así.");
+  rules.push(CONFIG.ZERO_TOLERANCE
+    ? "Cambiar de pestaña, de app, perder el foco de la ventana o salir de pantalla completa cierra el examen de inmediato."
+    : `Salir de esta ventana o de pantalla completa se registra como advertencia (máximo ${CONFIG.MAX_WARNINGS}).`);
+  rules.push("No se puede copiar, pegar ni usar el clic derecho durante el examen.");
+  el("rules").innerHTML = rules.map(r => `<li>${r}</li>`).join("");
+
+  if(CONFIG.REQUIRE_FULLSCREEN && !supportsFullscreen()){
+    el("note").textContent = "Este navegador no permite forzar pantalla completa (frecuente en iPhone/iPad). El examen igual registrará si cambiás de pestaña, de app, o si la ventana pierde el foco.";
+  }
+
+  if(CONFIG.COLLECT_STUDENT_NAME){
+    el("field-name").style.display = "block";
+  }
+
+  if(CONFIG.COLLECT_STUDENT_EMAIL){
+    el("field-email").style.display = "block";
+    el("field-email").placeholder = CONFIG.STUDENT_EMAIL_DOMAIN
+      ? `Correo institucional (nombre${CONFIG.STUDENT_EMAIL_DOMAIN})`
+      : "Correo electrónico";
+  }
+}
+
+function initStartScreen(){
+  renderStartScreenTexts();
+  updateStartButtonState();
+  initSheetTestButton();
+
+  el("btn-start").addEventListener("click", () => {
+    if(!questionsReady) return;
+    if(CONFIG.COLLECT_STUDENT_NAME){
+      const val = el("field-name").value.trim();
+      if(!val){
+        el("field-name").focus();
+        el("field-name").style.boxShadow = "inset 0 0 0 2px var(--alert)";
+        return;
+      }
+      studentName = val;
+    }
+    if(CONFIG.COLLECT_STUDENT_EMAIL){
+      const valEmail = el("field-email").value.trim();
+      if(!isValidStudentEmail(valEmail)){
+        el("field-email").focus();
+        el("field-email").style.boxShadow = "inset 0 0 0 2px var(--alert)";
+        el("email-error").style.display = "block";
+        el("email-error").textContent = CONFIG.STUDENT_EMAIL_DOMAIN
+          ? `Ingresá tu correo institucional válido (tiene que terminar en "${CONFIG.STUDENT_EMAIL_DOMAIN}").`
+          : "Ingresá un correo electrónico válido.";
+        return;
+      }
+      el("field-email").style.boxShadow = "";
+      el("email-error").style.display = "none";
+      studentEmail = valEmail.toLowerCase();
+    }
+    startQuiz();
+  });
+}
+
+/* ---------- Código de acceso / selección de materia ----------
+   Si CONFIG.ACCESS_CODES_ENABLED es true, antes que nada se le pide al
+   alumno un código. Ese código matchea contra CONFIG.EXAMS y determina
+   qué examen (materia) se carga: título, instrucciones, tiempo,
+   porcentaje de aprobación y preguntas propias (inline o su propio
+   CSV). Si es false, se salta directo al cuadro de consentimiento con
+   la configuración global de siempre (comportamiento clásico, un solo
+   examen sin código). ------------------------------------------- */
+let activeExam = null;
+
+function initAccessScreen(){
+  const usesAccessCodes = CONFIG.ACCESS_CODES_ENABLED && Array.isArray(CONFIG.EXAMS) && CONFIG.EXAMS.length > 0;
+
+  if(!usesAccessCodes){
+    el("screen-access").style.display = "none";
+    el("consent-overlay").style.display = "flex";
+    return;
+  }
+
+  el("screen-access").style.display = "flex";
+  el("consent-overlay").style.display = "none";
+
+  const submit = () => {
+    const raw = el("access-code-input").value.trim();
+    if(!raw){
+      showAccessError("Ingresá el código de acceso.");
+      return;
+    }
+    const match = CONFIG.EXAMS.find(ex => String(ex.code || "").trim().toLowerCase() === raw.toLowerCase());
+    if(!match){
+      showAccessError("Código incorrecto. Revisalo e intentá de nuevo.");
+      return;
+    }
+    activeExam = match;
+    applyExamProfile(match);
+    el("access-error").textContent = "";
+    el("screen-access").style.display = "none";
+    el("consent-overlay").style.display = "flex";
+  };
+
+  el("btn-access-submit").addEventListener("click", submit);
+  el("access-code-input").addEventListener("keydown", (e) => {
+    if(e.key === "Enter") submit();
+  });
+  el("access-code-input").focus();
+}
+
+function showAccessError(msg){
+  el("access-error").textContent = msg;
+  el("access-code-input").focus();
+  el("access-code-input").style.boxShadow = "inset 0 0 0 2px var(--alert)";
+  setTimeout(() => { el("access-code-input").style.boxShadow = ""; }, 900);
+}
+
+// Aplica los datos de la materia elegida (por código) sobre CONFIG y
+// vuelve a cargar las preguntas correspondientes.
+function applyExamProfile(exam){
+  if(exam.title) CONFIG.TITLE = exam.title;
+  if(exam.instructions) CONFIG.INSTRUCTIONS = exam.instructions;
+  if(exam.timeLimitMinutes) CONFIG.TIME_LIMIT_MINUTES = exam.timeLimitMinutes;
+  if(exam.passingPercent !== undefined) CONFIG.PASSING_PERCENT = exam.passingPercent;
+  if(exam.questionsCsvUrl) CONFIG.QUESTIONS_CSV_URL = exam.questionsCsvUrl;
+  if(Array.isArray(exam.questions) && exam.questions.length) CONFIG.QUESTIONS = exam.questions;
+
+  renderStartScreenTexts();
+
+  questionsReady = false;
+  updateStartButtonState();
+  loadQuestions().then(qs => {
+    CONFIG.QUESTIONS = qs;
+    questionsReady = true;
+    updateStartButtonState();
+  }).catch(() => {
+    questionsReady = true;
+    updateStartButtonState();
+  });
+}
+
+/* ---------- Prueba de conexión con la planilla (Code.gs) ----------
+   Le pega con GET (modo "cors" normal, no "no-cors") al mismo
+   SHEET_WEB_APP_URL configurado arriba. Sirve para confirmar, ANTES
+   de tomar el examen, que la URL está bien escrita y que el
+   deployment de Apps Script tiene los permisos correctos — sin
+   depender del envío "a ciegas" (no-cors) que usa el examen real.
+   Requiere que Code.gs tenga la función doGet incluida en la versión
+   más reciente que subiste. --------------------------------------- */
+function initSheetTestButton(){
+  if(!CONFIG.SHEET_WEB_APP_URL) return; // no hay nada que probar
+
+  const btn = el("btn-test-sheet");
+  const status = el("test-sheet-status");
+  btn.style.display = "inline-flex";
+
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    status.textContent = "Probando conexión…";
+    status.style.color = "#6b5f47";
+    try{
+      const res = await fetch(CONFIG.SHEET_WEB_APP_URL, { method: "GET", cache: "no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if(data && data.ok){
+        status.textContent =
+          `✓ Conectado a la planilla "${data.planilla}". ` +
+          (data.avisoPorCorreoActivado
+            ? (data.teacherEmailConfigurado
+                ? "El aviso por correo al profesor está activado y configurado. "
+                : "El aviso por correo al profesor está activado, pero falta completar TEACHER_EMAIL en Code.gs (por ahora no se manda ningún correo). ")
+            : "El aviso por correo al profesor está desactivado (SEND_EMAIL_NOTIFICATION = false). ") +
+          (data.avisoAlumnoActivado
+            ? "El correo de confirmación al alumno también está activado."
+            : "El correo de confirmación al alumno está desactivado (SEND_STUDENT_CONFIRMATION_EMAIL = false).");
+        status.style.color = "var(--ok)";
+      } else {
+        status.textContent = "El Web App respondió, pero con un formato inesperado. Revisá que Code.gs sea la versión más reciente y que se haya vuelto a implementar (Implementar → Administrar implementaciones → Editar → Nueva versión).";
+        status.style.color = "var(--alert)";
+      }
+    } catch(err){
+      status.textContent =
+        "No se pudo conectar. Revisá: que SHEET_WEB_APP_URL esté bien copiada (termina en /exec), " +
+        "que el deployment tenga acceso \"Cualquier usuario\", y que Code.gs incluya la función doGet " +
+        "(volvé a implementar una \"Nueva versión\" si acabás de actualizar el código).";
+      status.style.color = "var(--alert)";
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+/* ---------- Preparación de preguntas por tipo ----------
+   Tipos soportados en CONFIG.QUESTIONS / questions.js / CSV:
+   - "single"   (por defecto si no se indica "type"): opción múltiple clásica.
+                { question, options:[...], correct: índice (0-based) }
+   - "multiple": selección múltiple (una o más correctas).
+                { type:"multiple", question, options:[...], correct:[índices 0-based] }
+   - "boolean":  verdadero / falso.
+                { type:"boolean", question, correct: true|false }
+   - "order":   ordenar ítems. "items" va en el ORDEN CORRECTO; se muestra
+                barajado al alumno.
+                { type:"order", question, items:[...] }
+   - "text":    respuesta libre / párrafo, sin corrección automática.
+                { type:"text", question }
+   ------------------------------------------------------------------- */
+function prepareQuestion(q){
+  const type = q.type || "single";
+  let prepared;
+
+  if(type === "boolean"){
+    const isTrue = q.correct === true || String(q.correct).trim().toLowerCase() === "verdadero";
+    prepared = {
+      type: "single",
+      question: q.question,
+      options: [
+        { text: "Verdadero", isCorrect: isTrue },
+        { text: "Falso", isCorrect: !isTrue }
+      ],
+      selected: null
+    };
+  } else if(type === "multiple"){
+    const correctSet = Array.isArray(q.correct) ? q.correct : [];
+    let options = q.options.map((text, i) => ({ text, isCorrect: correctSet.includes(i) }));
+    if(CONFIG.SHUFFLE_OPTIONS) options = shuffle(options);
+    prepared = { type: "multiple", question: q.question, options, selected: [] };
+  } else if(type === "order"){
+    const correctOrder = q.items.slice();
+    // Se baraja siempre (más allá de SHUFFLE_OPTIONS), porque mostrar los
+    // ítems ya en el orden correcto anularía el sentido de la pregunta.
+    const currentOrder = shuffle(correctOrder);
+    prepared = { type: "order", question: q.question, correctOrder, currentOrder };
+  } else if(type === "text"){
+    prepared = { type: "text", question: q.question, selected: "" };
+  } else {
+    // "single" (opción múltiple clásica, comportamiento por defecto)
+    let options = q.options.map((text, i) => ({ text, isCorrect: i === q.correct }));
+    if(CONFIG.SHUFFLE_OPTIONS) options = shuffle(options);
+    prepared = { type: "single", question: q.question, options, selected: null };
+  }
+
+  // El campo "image" (URL) es opcional y funciona con cualquier tipo de
+  // pregunta: si está presente, se muestra arriba de las opciones.
+  prepared.image = q.image || null;
+  return prepared;
+}
+
+function isAnswered(q){
+  switch(q.type){
+    case "multiple": return q.selected.length > 0;
+    case "order": return true; // siempre tiene un orden actual, aunque sea el barajado inicial
+    case "text": return q.selected.trim().length > 0;
+    default: return q.selected !== null; // "single"
+  }
+}
+
+function isCorrectAnswer(q){
+  switch(q.type){
+    case "single":
+      return q.selected !== null && q.options[q.selected].isCorrect;
+    case "multiple": {
+      const correctIdxs = q.options.reduce((acc, o, i) => { if(o.isCorrect) acc.push(i); return acc; }, []);
+      const sel = q.selected.slice().sort((a, b) => a - b);
+      const correct = correctIdxs.slice().sort((a, b) => a - b);
+      return sel.length === correct.length && sel.every((v, i) => v === correct[i]);
+    }
+    case "order":
+      return q.currentOrder.length === q.correctOrder.length &&
+        q.currentOrder.every((v, i) => v === q.correctOrder[i]);
+    case "text":
+      return null; // no aplica: se revisa a mano
+    default:
+      return false;
+  }
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+/* ---------- Iniciar examen ---------- */
+function startQuiz(){
+  let qs = CONFIG.QUESTIONS.map(prepareQuestion);
+  if(CONFIG.SHUFFLE_QUESTIONS) qs = shuffle(qs);
+  quizQuestions = qs;
+  currentIndex = 0;
+  warnings = 0;
+  submitted = false;
+  quizStartedAt = Date.now();
+
+  if(CONFIG.REQUIRE_FULLSCREEN && supportsFullscreen()) requestFullscreen();
+
+  el("screen-start").style.display = "none";
+  el("screen-quiz").style.display = "block";
+
+  endTimestamp = Date.now() + CONFIG.TIME_LIMIT_MINUTES * 60000;
+  timerInterval = setInterval(updateTimer, 250);
+  updateTimer();
+
+  renderDots();
+  renderQuestion();
+
+  window.addEventListener("beforeunload", onBeforeUnload);
+}
+
+function onBeforeUnload(e){
+  if(!submitted){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+}
+
+/* ---------- Temporizador ---------- */
+function updateTimer(){
+  const remaining = Math.max(0, endTimestamp - Date.now());
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  const timerEl = el("timer");
+  timerEl.textContent = `${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+  timerEl.classList.toggle("low", remaining <= 60000);
+  if(remaining <= 0){
+    clearInterval(timerInterval);
+    finishQuiz("timeout");
+  }
+}
+
+/* ---------- Render de preguntas ---------- */
+function renderDots(){
+  el("dots").innerHTML = quizQuestions.map((q, i) => {
+    const cls = ["dot"];
+    if(i === currentIndex) cls.push("current");
+    else if(isAnswered(q)) cls.push("answered");
+    return `<div class="${cls.join(" ")}"></div>`;
+  }).join("");
+}
+
+function renderQuestion(){
+  const q = quizQuestions[currentIndex];
+  el("q-index").textContent = `Pregunta ${currentIndex + 1} de ${quizQuestions.length}`;
+  el("q-text").textContent = q.question;
+  renderQuestionImage(q);
+
+  const container = el("options");
+  if(q.type === "multiple") renderMultipleChoice(q, container);
+  else if(q.type === "order") renderOrderQuestion(q, container);
+  else if(q.type === "text") renderTextQuestion(q, container);
+  else renderSingleChoice(q, container);
+
+  el("btn-prev").disabled = currentIndex === 0;
+  el("btn-prev").style.visibility = currentIndex === 0 ? "hidden" : "visible";
+  el("btn-next").textContent = currentIndex === quizQuestions.length - 1 ? "Finalizar examen" : "Siguiente";
+}
+
+// Muestra la imagen de la pregunta (si la tiene). Si la URL no carga
+// (link roto, sin conexión, etc.), se avisa en vez de dejar un hueco
+// vacío sin explicación.
+function renderQuestionImage(q){
+  const wrap = el("q-image-wrap");
+  if(!q.image){
+    wrap.style.display = "none";
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.style.display = "block";
+  wrap.innerHTML = `<img class="q-image" src="${escapeHtml(q.image)}" alt="Imagen de la pregunta">`;
+  const img = wrap.querySelector("img");
+  img.addEventListener("error", () => {
+    wrap.innerHTML = `<div class="q-image-error">No se pudo cargar la imagen de esta pregunta (revisá la URL configurada).</div>`;
+  }, { once: true });
+}
+
+/* -- Opción única (y verdadero/falso, que se convierte en esto) -- */
+function renderSingleChoice(q, container){
+  container.innerHTML = q.options.map((opt, i) => `
+    <label class="option ${q.selected === i ? "selected" : ""}" data-i="${i}">
+      <span class="bullet"></span>
+      <input type="radio" name="opt" ${q.selected === i ? "checked" : ""}>
+      <span>${escapeHtml(opt.text)}</span>
+    </label>
+  `).join("");
+
+  // Escuchamos "change" en el input real (no "click" en el label): un
+  // clic en un <label> que envuelve un input dispara el clic sintético
+  // del navegador sobre ese input, que vuelve a burbujear y duplica el
+  // evento "click" en el label. "change" del input, en cambio, se
+  // dispara una sola vez por interacción real.
+  container.querySelectorAll(".option input").forEach(input => {
+    input.addEventListener("change", () => {
+      const i = parseInt(input.closest(".option").dataset.i, 10);
+      q.selected = i;
+      renderQuestion();
+      renderDots();
+    });
+  });
+}
+
+/* -- Selección múltiple (una o más correctas) -- */
+function renderMultipleChoice(q, container){
+  container.innerHTML = q.options.map((opt, i) => `
+    <label class="option ${q.selected.includes(i) ? "selected" : ""}" data-i="${i}">
+      <span class="bullet checkbox"></span>
+      <input type="checkbox" ${q.selected.includes(i) ? "checked" : ""}>
+      <span>${escapeHtml(opt.text)}</span>
+    </label>
+  `).join("");
+
+  container.querySelectorAll(".option input").forEach(input => {
+    input.addEventListener("change", () => {
+      const i = parseInt(input.closest(".option").dataset.i, 10);
+      const pos = q.selected.indexOf(i);
+      if(pos === -1) q.selected.push(i); else q.selected.splice(pos, 1);
+      renderQuestion();
+      renderDots();
+    });
+  });
+}
+
+/* -- Ordenar ítems -- */
+function renderOrderQuestion(q, container){
+  container.innerHTML =
+    `<p class="order-hint">Ordená los ítems con las flechas: el primero de la lista es tu respuesta para el puesto 1.</p>` +
+    q.currentOrder.map((text, i) => `
+      <div class="order-item" data-i="${i}">
+        <span class="order-num">${i + 1}</span>
+        <span class="order-text">${escapeHtml(text)}</span>
+        <span class="order-controls">
+          <button type="button" class="order-btn" data-dir="up" ${i === 0 ? "disabled" : ""} aria-label="Subir">▲</button>
+          <button type="button" class="order-btn" data-dir="down" ${i === q.currentOrder.length - 1 ? "disabled" : ""} aria-label="Bajar">▼</button>
+        </span>
+      </div>
+    `).join("");
+
+  container.querySelectorAll(".order-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".order-item");
+      const i = parseInt(item.dataset.i, 10);
+      const j = btn.dataset.dir === "up" ? i - 1 : i + 1;
+      if(j < 0 || j >= q.currentOrder.length) return;
+      [q.currentOrder[i], q.currentOrder[j]] = [q.currentOrder[j], q.currentOrder[i]];
+      renderQuestion();
+    });
+  });
+}
+
+/* -- Respuesta libre / párrafo (sin corrección automática) -- */
+function renderTextQuestion(q, container){
+  container.innerHTML = `
+    <textarea class="field" id="text-answer" rows="6" placeholder="Escribí tu respuesta acá…"></textarea>
+    <p class="text-note">Esta respuesta no se corrige de forma automática: el profesor la revisa manualmente.</p>
+  `;
+  const ta = el("text-answer");
+  ta.value = q.selected;
+  ta.addEventListener("input", (e) => {
+    q.selected = e.target.value;
+    renderDots();
+  });
+}
+
+el("btn-prev").addEventListener("click", () => {
+  if(currentIndex > 0){ currentIndex--; renderQuestion(); renderDots(); }
+});
+el("btn-next").addEventListener("click", () => {
+  if(currentIndex < quizQuestions.length - 1){
+    currentIndex++;
+    renderQuestion();
+    renderDots();
+  } else {
+    if(confirm("¿Confirmás que querés finalizar el examen? No vas a poder modificar tus respuestas después.")){
+      finishQuiz("manual");
+    }
+  }
+});
+
+/* ---------- Finalizar y resultados ---------- */
+const CLOSE_REASON_TEXT = {
+  manual: "Finalizado por el alumno.",
+  timeout: "Tiempo agotado.",
+  violation: "Cerrado automáticamente por actividad no permitida (cambio de pestaña/app, pérdida de foco o salida de pantalla completa)."
+};
+
+function finishQuiz(reason){
+  if(submitted) return;
+  reason = reason || "manual";
+  submitted = true;
+  clearInterval(timerInterval);
+  window.removeEventListener("beforeunload", onBeforeUnload);
+  exitFullscreen();
+
+  el("screen-quiz").style.display = "none";
+  el("screen-results").style.display = "block";
+
+  // Las preguntas de tipo "text" (párrafo libre) no se autocorrigen, así
+  // que quedan afuera del puntaje: el profesor las revisa a mano.
+  const gradable = quizQuestions.filter(q => q.type !== "text");
+  const total = gradable.length;
+  const correct = gradable.filter(q => isCorrectAnswer(q) === true).length;
+  const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const passed = total > 0 && percent >= CONFIG.PASSING_PERCENT;
+  const hasManualQuestions = quizQuestions.some(q => q.type === "text");
+
+  if(total === 0){
+    el("score-big").textContent = "—";
+    el("score-tag").textContent = "Requiere revisión manual (todas las preguntas son de respuesta libre)";
+    el("score-tag").className = "score-tag";
+  } else {
+    el("score-big").textContent = `${correct} / ${total}`;
+    el("score-tag").textContent = `${percent}% — ${passed ? "Aprobado" : "No aprobado"}` +
+      (hasManualQuestions ? " (sin contar las de respuesta libre)" : "");
+    el("score-tag").className = "score-tag " + (passed ? "ok" : "fail");
+  }
+  el("result-seal").innerHTML = `<svg viewBox="0 0 24 24" style="fill:#2a1c08"><path d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4zm-1.2 14.2L7 11.4l1.4-1.4 2.4 2.4L16.6 7l1.4 1.4-7.2 7.8z"/></svg>`;
+  el("result-seal").style.background = passed
+    ? "radial-gradient(circle at 35% 30%, #2f5a44, var(--ok) 70%)"
+    : "radial-gradient(circle at 35% 30%, #7a2b28, var(--alert) 70%)";
+
+  const closeReasonText = CLOSE_REASON_TEXT[reason] || reason;
+  el("warn-summary").textContent = `Advertencias registradas durante el examen: ${warnings}. Motivo de finalización: ${closeReasonText}` +
+    (hasManualQuestions ? " Este examen tiene preguntas de respuesta libre: revisalas en la planilla." : "");
+
+  sendResultsToSheet({
+    timestamp: new Date().toISOString(),
+    exam: CONFIG.TITLE,
+    student: studentName,
+    email: studentEmail,
+    score: correct,
+    total: total,
+    percent: percent,
+    passed: passed,
+    warnings: warnings,
+    closeReason: closeReasonText,
+    hasManualQuestions: hasManualQuestions,
+    answers: quizQuestions.map(q => answerSummary(q))
+  }, hasManualQuestions);
+
+  if(CONFIG.SHOW_REVIEW_AT_END){
+    el("review").innerHTML = quizQuestions.map((q, i) => {
+      const { selText, correctText, ok } = reviewTextFor(q);
+      const isLongText = q.type === "text";
+      return `
+        <div class="review-item">
+          <div class="rq">${i + 1}. ${escapeHtml(q.question)}</div>
+          ${isLongText
+            ? `<div class="ra" style="font-style:italic;">Respuesta libre — la revisa el profesor manualmente.</div>
+               <div class="ra-text">${selText.trim() ? escapeHtml(selText) : "(sin responder)"}</div>`
+            : `<div class="ra ${ok === null ? "" : (ok ? "right" : "wrong")}">Tu respuesta: ${escapeHtml(selText)}</div>
+               ${ok === false ? `<div class="ra right">Respuesta correcta: ${escapeHtml(correctText)}</div>` : ""}`}
+        </div>`;
+    }).join("");
+  }
+}
+
+// Arma un resumen de la respuesta de una pregunta, para mandar a la planilla.
+function answerSummary(q){
+  const base = { question: q.question, type: q.type };
+  if(q.type === "multiple"){
+    base.selected = q.selected.map(i => q.options[i].text).join(" | ");
+    base.correct = q.options.filter(o => o.isCorrect).map(o => o.text).join(" | ");
+    base.isCorrect = isCorrectAnswer(q);
+  } else if(q.type === "order"){
+    base.selected = q.currentOrder.join(" → ");
+    base.correct = q.correctOrder.join(" → ");
+    base.isCorrect = isCorrectAnswer(q);
+  } else if(q.type === "text"){
+    base.selected = q.selected;
+    base.correct = "(revisión manual)";
+    base.isCorrect = null;
+  } else { // "single" (incluye verdadero/falso)
+    base.selected = q.selected !== null ? q.options[q.selected].text : "";
+    base.correct = q.options.find(o => o.isCorrect).text;
+    base.isCorrect = isCorrectAnswer(q);
+  }
+  return base;
+}
+
+// Textos para la pantalla de revisión al final del examen.
+function reviewTextFor(q){
+  if(q.type === "multiple"){
+    const selText = q.selected.length ? q.selected.map(i => q.options[i].text).join(", ") : "(sin responder)";
+    const correctText = q.options.filter(o => o.isCorrect).map(o => o.text).join(", ");
+    return { selText, correctText, ok: isCorrectAnswer(q) };
+  }
+  if(q.type === "order"){
+    return { selText: q.currentOrder.join(" → "), correctText: q.correctOrder.join(" → "), ok: isCorrectAnswer(q) };
+  }
+  if(q.type === "text"){
+    return { selText: q.selected.trim() ? q.selected : "(sin responder)", correctText: "", ok: null };
+  }
+  const selText = q.selected !== null ? q.options[q.selected].text : "(sin responder)";
+  const correctText = q.options.find(o => o.isCorrect).text;
+  return { selText, correctText, ok: isCorrectAnswer(q) };
+}
+
+/* ---------- Envío del resultado a Google Sheets ---------- */
+function sendResultsToSheet(payload, hasManualQuestions){
+  const statusEl = el("send-status");
+
+  const emailNote = (CONFIG.COLLECT_STUDENT_EMAIL && payload.email)
+    ? ` Te mandamos un correo de confirmación a ${payload.email}; el del resultado final llega aparte cuando el profesor lo corrija${hasManualQuestions ? " (este examen tiene preguntas de desarrollo, así que la corrección puede tardar un poco más)" : ""}.`
+    : "";
+
+  if(!CONFIG.SHEET_WEB_APP_URL){
+    statusEl.textContent = "";
+    return;
+  }
+
+  statusEl.textContent = "Enviando resultado…";
+  statusEl.className = "";
+
+  // mode:'no-cors' evita el preflight de CORS que Apps Script no maneja,
+  // pero como consecuencia no podemos leer la respuesta: solo sabemos si
+  // la solicitud salió de red o no, no si el script la procesó bien.
+  fetch(CONFIG.SHEET_WEB_APP_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify(payload)
+  }).then(() => {
+    statusEl.textContent = "Resultado enviado a la planilla del profesor." + emailNote;
+    statusEl.className = "ok";
+  }).catch(() => {
+    statusEl.textContent = "No se pudo enviar el resultado (revisá tu conexión). Mostrale esta pantalla al profesor por las dudas.";
+    statusEl.className = "error";
+  });
+}
+
+/* ---------- Detección de salida (pestaña / app / foco / pantalla completa) ---------- */
+const INCIDENT_TEXT = {
+  visibility: "Cambiaste de pestaña, de aplicación o minimizaste la ventana.",
+  blur: "La ventana del examen perdió el foco.",
+  fullscreen: "Saliste de la pantalla completa."
+};
+
+function inQuizScreen(){
+  return el("screen-quiz").style.display !== "none";
+}
+
+function registerIncident(reason){
+  if(submitted || !inQuizScreen()) return;
+  // Período de gracia justo después de arrancar: evita falsos positivos
+  // por el propio pedido de pantalla completa o el cambio de pantalla inicial.
+  if(Date.now() - quizStartedAt < 1200) return;
+  const now = Date.now();
+  if(now - lastIncidentAt < 800) return; // evita contar el mismo evento dos veces
+  lastIncidentAt = now;
+  warnings++;
+
+  const msg = INCIDENT_TEXT[reason] || "Se detectó actividad no permitida.";
+
+  if(CONFIG.ZERO_TOLERANCE){
+    el("overlay-title").textContent = "Examen cerrado";
+    el("overlay-msg").textContent = `${msg} El examen se cerró automáticamente y tus respuestas se enviaron tal cual estaban.`;
+    el("btn-resume").style.display = "none";
+    el("overlay").style.display = "flex";
+    finishQuiz("violation");
+    return;
+  }
+
+  // Modo tolerante (legacy): permite hasta MAX_WARNINGS incidentes.
+  el("overlay-title").textContent = "Actividad fuera del examen detectada";
+  el("btn-resume").style.display = "";
+  el("overlay-msg").textContent =
+    `${msg} Advertencia ${warnings} de ${CONFIG.MAX_WARNINGS}. ` +
+    (warnings >= CONFIG.MAX_WARNINGS
+      ? "Se alcanzó el máximo permitido: el examen se enviará automáticamente."
+      : "Volvé al examen para continuar.");
+  el("overlay").style.display = "flex";
+
+  if(warnings >= CONFIG.MAX_WARNINGS){
+    setTimeout(() => { el("overlay").style.display = "none"; finishQuiz("violation"); }, 1800);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden) registerIncident("visibility");
+});
+
+window.addEventListener("blur", () => {
+  // Si ya está oculto/perdió visibilidad, visibilitychange ya lo cuenta;
+  // esto cubre además la pérdida de foco sin cambiar de pestaña (ej. clic
+  // en otra ventana/app mientras esta sigue visible).
+  if(!document.hidden) registerIncident("blur");
+});
+
+["fullscreenchange", "webkitfullscreenchange", "msfullscreenchange"].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const active = isFullscreen();
+    fullscreenActive = active;
+    const ribbon = el("ribbon");
+    if(active){
+      ribbon.textContent = "MODO SEGURO";
+      ribbon.classList.add("on");
+    } else {
+      ribbon.textContent = "SIN ASEGURAR";
+      ribbon.classList.remove("on");
+      if(CONFIG.REQUIRE_FULLSCREEN){
+        registerIncident("fullscreen");
+      }
+    }
+  });
+});
+
+el("btn-resume").addEventListener("click", () => {
+  el("overlay").style.display = "none";
+  if(CONFIG.REQUIRE_FULLSCREEN && supportsFullscreen()) requestFullscreen();
+});
+
+/* ---------- Bloqueo de copiar / clic derecho / atajos ---------- */
+["copy", "cut", "paste", "contextmenu", "selectstart"].forEach(evt => {
+  document.addEventListener(evt, (e) => {
+    if(el("screen-quiz").style.display !== "none") e.preventDefault();
+  });
+});
+
+document.addEventListener("keydown", (e) => {
+  if(el("screen-quiz").style.display === "none") return;
+  const k = e.key;
+  const blockCombo =
+    (e.ctrlKey || e.metaKey) && ["c","v","x","u","s","p"].includes(k.toLowerCase()) ||
+    (e.ctrlKey && e.shiftKey && ["i","j","c"].includes(k.toLowerCase())) ||
+    k === "F12";
+  if(blockCombo) e.preventDefault();
+});
+
+/* ---------- Arranque ---------- */
+const usesAccessCodes = CONFIG.ACCESS_CODES_ENABLED && Array.isArray(CONFIG.EXAMS) && CONFIG.EXAMS.length > 0;
+
+initConsent();
+initStartScreen();
+initAccessScreen();
+
+if(!usesAccessCodes){
+  // Comportamiento clásico: un solo examen, sin código — cargamos sus
+  // preguntas de una. Si hay código de acceso, esto lo hace
+  // "applyExamProfile" recién cuando el alumno ingresa un código válido.
+  loadQuestions().then(qs => {
+    CONFIG.QUESTIONS = qs;
+    questionsReady = true;
+    updateStartButtonState();
+  }).catch(() => {
+    // Si algo falla de forma inesperada, igual habilitamos con las
+    // preguntas por defecto para no dejar el botón bloqueado.
+    questionsReady = true;
+    updateStartButtonState();
+  });
+}
+</script>
+</body>
+</html>

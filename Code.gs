@@ -37,17 +37,61 @@ const SEND_STUDENT_CONFIRMATION_EMAIL = true;
 // No hace falta tocar nada de acá para abajo
 // ============================================================
 
-// Encabezado de la planilla. Si ya tenías una planilla en uso de una
-// versión anterior (sin columna "Email" ni las de corrección), las
-// filas viejas quedan tal cual — te conviene actualizar a mano el
-// encabezado de la fila 1 para que las columnas nuevas queden
-// alineadas, o simplemente empezar una pestaña/planilla nueva.
+// Encabezado de la planilla.
 const HEADER = [
   "Fecha", "Materia", "Alumno", "Email", "Puntaje", "Total", "Porcentaje",
-  "Aprobado", "Advertencias", "Motivo de finalización", "Detalle de respuestas",
+  "Aprobado", "Advertencias", "Salidas breves (margen de gracia)",
+  "DevTools sospechado (heurística)", "Motivo de finalización",
+  "Detalle de respuestas",
   "Corregido", "Nota final (manual)", "Comentario docente",
   "Resultado enviado", "Fecha envío resultado"
 ];
+
+// Se fija que la fila 1 tenga TODAS las columnas de HEADER (incluida
+// "Email") y devuelve el encabezado real de la planilla, en el orden en
+// que están hoy sus columnas.
+//
+// Por qué existe esto: si en algún momento se armó la planilla con una
+// versión anterior de este script (por ejemplo sin columna "Email"), el
+// código viejo hacía sheet.appendRow([...]) con una lista de valores en
+// un orden fijo — eso escribe cada dato en la posición de columna que
+// le toca según el ARRAY, no según lo que dice el encabezado real de la
+// fila 1. Si la fila 1 le faltaba una columna (p. ej. "Email"), todos
+// los datos de ahí en más quedaban corridos una posición, y el correo
+// del alumno terminaba pisado por otro dato o directamente afuera de la
+// planilla. Con esta función el encabezado se autocompleta la primera
+// vez que hace falta, y más abajo escribimos cada dato buscando la
+// columna por NOMBRE (buildRowByHeader), así que da lo mismo el orden o
+// si a la planilla le faltaba alguna columna: nunca más se corre.
+function ensureHeader(sheet) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADER);
+    return HEADER.slice();
+  }
+
+  const lastCol = Math.max(sheet.getLastColumn(), 1);
+  let header = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  while (header.length && header[header.length - 1] === "") header.pop();
+
+  const columnasFaltantes = HEADER.filter(h => header.indexOf(h) === -1);
+  if (columnasFaltantes.length) {
+    header = header.concat(columnasFaltantes);
+    sheet.getRange(1, 1, 1, header.length).setValues([header]);
+  }
+  return header;
+}
+
+// Arma la fila a insertar respetando el orden REAL de columnas de la
+// planilla (el que devuelve ensureHeader), no un orden fijo. Cualquier
+// columna del encabezado que no tenga un valor definido en
+// valoresPorColumna queda vacía (por ejemplo columnas propias que el
+// profesor haya agregado a mano).
+function buildRowByHeader(header, valoresPorColumna) {
+  return header.map(col => {
+    const v = valoresPorColumna[col];
+    return (v === undefined || v === null) ? "" : v;
+  });
+}
 
 function doPost(e) {
   // Si ves el error "Cannot read properties of undefined (reading
@@ -66,9 +110,7 @@ function doPost(e) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const data = JSON.parse(e.postData.contents);
 
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(HEADER);
-  }
+  const header = ensureHeader(sheet);
 
   // Si el examen no tiene preguntas de desarrollo ("text"), está 100%
   // autocorregido y no necesita revisión manual: se marca "Corregido"
@@ -79,24 +121,26 @@ function doPost(e) {
   // "Nota final (manual)" y "Comentario docente").
   const corregidoInicial = data.hasManualQuestions ? "No" : "Sí";
 
-  sheet.appendRow([
-    data.timestamp || new Date().toISOString(),
-    data.exam || "(sin especificar)",
-    data.student || "(sin nombre)",
-    data.email || "",
-    data.score,
-    data.total,
-    (data.percent || 0) + "%",
-    data.passed ? "Sí" : "No",
-    data.warnings || 0,
-    data.closeReason || "",
-    JSON.stringify(data.answers || []),
-    corregidoInicial,
-    "",   // Nota final (manual) — completala solo si querés pisar el puntaje automático
-    "",   // Comentario docente — opcional, se incluye en el correo de resultado
-    "No", // Resultado enviado
-    ""    // Fecha envío resultado
-  ]);
+  sheet.appendRow(buildRowByHeader(header, {
+    "Fecha": data.timestamp || new Date().toISOString(),
+    "Materia": data.exam || "(sin especificar)",
+    "Alumno": data.student || "(sin nombre)",
+    "Email": data.email || "",
+    "Puntaje": data.score,
+    "Total": data.total,
+    "Porcentaje": (data.percent || 0) + "%",
+    "Aprobado": data.passed ? "Sí" : "No",
+    "Advertencias": data.warnings || 0,
+    "Salidas breves (margen de gracia)": data.quickExits || 0,
+    "DevTools sospechado (heurística)": data.devToolsSuspected || 0,
+    "Motivo de finalización": data.closeReason || "",
+    "Detalle de respuestas": JSON.stringify(data.answers || []),
+    "Corregido": corregidoInicial,
+    "Nota final (manual)": "",   // completala solo si querés pisar el puntaje automático
+    "Comentario docente": "",    // opcional, se incluye en el correo de resultado
+    "Resultado enviado": "No",
+    "Fecha envío resultado": ""
+  }));
 
   if (SEND_EMAIL_NOTIFICATION && TEACHER_EMAIL) {
     const body =
@@ -106,6 +150,8 @@ function doPost(e) {
       "Puntaje: " + data.score + "/" + data.total + " (" + data.percent + "%)\n" +
       "Aprobado: " + (data.passed ? "Sí" : "No") + "\n" +
       "Advertencias durante el examen: " + (data.warnings || 0) + "\n" +
+      "Salidas breves (dentro del margen de gracia, no cuentan como advertencia): " + (data.quickExits || 0) + "\n" +
+      "DevTools sospechado (heurística, no confirma nada por sí sola): " + (data.devToolsSuspected || 0) + "\n" +
       "Motivo de finalización: " + (data.closeReason || "(no informado)") + "\n" +
       (data.hasManualQuestions
         ? "\nEste examen tiene preguntas de desarrollo: revisalas en la planilla y marcá \"Corregido\" = \"Sí\" cuando quieras habilitar el envío del resultado al alumno."
@@ -334,6 +380,8 @@ function probarEnvioDePrueba() {
         percent: 80,
         passed: true,
         warnings: 0,
+        quickExits: 0,
+        devToolsSuspected: 0,
         closeReason: "Finalizado por el alumno.",
         hasManualQuestions: false,
         answers: [
