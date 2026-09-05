@@ -1,0 +1,28 @@
+tipo,pregunta,imagen,opcion1,opcion2,opcion3,opcion4,opcion5,opcion6,correcta
+verdadero_falso,"El factor de producción llamado ""Tecnología"" es el más nuevo en sumarse a la economía y ayuda a que los negocios produzcan mucho más rápido.",,,,,,,,verdadero
+verdadero_falso,"Los niveles de gestión en una organización se dividen en tres: estratégico (la base de operarios), táctico y operativo.",,,,,,,,falso
+verdadero_falso,Un horno de panadería sirve como recurso material de la empresa y también como factor de producción de tipo capital.,,,,,,,,verdadero
+verdadero_falso,"Las personas que trabajan atendiendo al público en un negocio forman parte del factor de producción llamado ""Trabajo"".",,,,,,,,verdadero
+opcion_unica,Completá: Los recursos de la empresa son elementos más ______ porque pertenecen a un negocio en particular y no a todos por igual.,,planificar,específicos,capital,estratégico,,,2
+opcion_unica,"Completá: La primera etapa del ciclo administrativo consiste en ______, es decir, definir qué se va a hacer y cómo lograrlo.",,planificar,específicos,capital,estratégico,,,1
+opcion_unica,"Completá: Las máquinas, herramientas y computadoras que usan los trabajadores forman parte del factor de producción llamado ______.",,planificar,específicos,capital,estratégico,,,3
+opcion_unica,Completá: El nivel ______ de la pirámide organizacional está integrado por los directores o autoridades máximas que piensan a largo plazo.,,planificar,específicos,capital,estratégico,,,4
+opcion_unica,El tiempo y esfuerzo que los ingenieros usan para diseñar un auto nuevo en la fábrica. ¿A qué factor de producción corresponde?,,Factor Trabajo,Factor Capital,Factor Tierra,,,,1
+opcion_unica,La máquina automática que arma las piezas y ensambla los vehículos. ¿A qué factor de producción corresponde?,,Factor Trabajo,Factor Capital,Factor Tierra,,,,2
+opcion_unica,"El acero, el caucho y los recursos naturales que se usan para hacer las llantas. ¿A qué factor de producción corresponde?",,Factor Trabajo,Factor Capital,Factor Tierra,,,,3
+opcion_unica,"Cosas exclusivas que un negocio posee o controla, como el dinero en caja o su marca registrada. ¿A qué concepto corresponde?",,Factores de Producción,Recursos de la Empresa,,,,,2
+opcion_unica,Un kiosquero de la Avenida Lafinur cuenta el dinero que tiene en su caja al terminar el día para saber cuánto ganó. ¿Qué tipo de recurso está usando?,,Recurso Humano,Recurso Financiero,Recurso Intangible,,,,2
+opcion_unica,Una heladería artesanal cuida mucho el nombre y el logo de su marca para que la gente del centro los reconozca rápido. ¿Qué clase de recurso es?,,Recurso Material,Recurso Financiero,Recurso Intangible,,,,3
+opcion_unica,"Cuando un gerente de un local de comidas rápidas revisa al final del día si se vendió la cantidad de hamburguesas planeada, ¿qué función administrativa está aplicando?",,Planificar,Organizar,Controlar,,,,3
+opcion_unica,"El dueño de una panadería frente a la Plaza Pringles compra hornos nuevos para cocinar mejor. Dentro de los factores productivos, esos hornos son un ejemplo de:",,El factor Trabajo,El factor Capital,El factor Tierra,,,,2
+opcion_unica,"Si un grupo de amigos organiza un torneo de videojuegos y uno de ellos se encarga de conseguir la consola, otro de comprar las golosinas y otro de armar el fixture, están realizando la función de:",,Organizar (distribuir tareas y recursos),Controlar las ventas,Definir el nivel estratégico,,,,1
+opcion_unica,"La harina, el agua y la levadura que un panadero utiliza cada mañana en su negocio son considerados:",,Recursos materiales e insumos específicos de esa panadería,El factor intangible de la empresa,Recursos exclusivamente financieros,,,,1
+opcion_unica,Una peluquería del barrio Cerro de la Cruz pide un préstamo al banco para comprar espejos nuevos. Ese dinero recibido se clasifica como:,,Recurso Financiero,Recurso Humano directo,Factor Tierra puro,,,,1
+opcion_unica,¿Cuál es la diferencia principal entre los factores de producción y los recursos de una empresa?,,Los recursos son universales y los factores son solo de una empresa.,"Los factores de producción son las categorías generales y básicas, mientras que los recursos son las cosas específicas que posee o controla un negocio en particular.",No hay ninguna diferencia entre ambos términos en la economía.,,,,2
+ordenar,"Ordená correctamente los componentes del Estado de Resultados de Bodega Mosquita, desde el primero hasta el último.",,Total de Ingresos por Ventas,Costo de Mercaderías Vendidas - Vinos,Resultado Bruto,Sueldos y Jornales + Gastos de Comercialización,Resultado Neto del Ejercicio,,
+ordenar,"Ordená correctamente las secciones del Estado de Situación Patrimonial de Bodega Mosquita, tal como aparecen en el balance.",,Activo Corriente,Activo No Corriente,Pasivo Corriente,Pasivo No Corriente,Patrimonio Neto,,
+opcion_unica,"Según el Estado de Resultados de Bodega Mosquita, ¿cuál es el Resultado Neto del Ejercicio?",,$8.000.000,$20.000.000,$30.000.000,$65.000.000,,,2
+opcion_unica,¿Cuál es el Total del Activo de Bodega Mosquita según su Estado de Situación Patrimonial?,,$45.700.000,$24.500.000,$70.200.000,$22.700.000,,,3
+opcion_multiple,¿Cuáles de los siguientes rubros forman parte del Activo Corriente de Bodega Mosquita?,,Caja,Deudores por Ventas,Inmuebles - Bodega en Luján de Cuyo,Vinos Malbec en Stock,Maquinaria y Tanques de Acero Inoxidable,,1|2|4
+opcion_unica,¿Cuál es el Total del Patrimonio Neto de Bodega Mosquita?,,$18.000.000,$24.500.000,$45.700.000,$70.200.000,,,3
+parrafo,Explicá con tus palabras por qué el Total del Activo debe ser igual a la suma del Total del Pasivo más el Total del Patrimonio Neto en el Estado de Situación Patrimonial de Bodega Mosquita.,,,,,,,,

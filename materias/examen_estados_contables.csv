@@ -1,0 +1,43 @@
+tipo,pregunta,imagen,opcion1,opcion2,opcion3,opcion4,opcion5,opcion6,correcta
+opcion_multiple,"De acuerdo a la estructura del Estado de Situación Patrimonial, ¿cuáles de los siguientes rubros integran el ""Activo""?",,Inversiones,Bienes de uso,Deudas comerciales / por pagar,Créditos,,,1|2|4
+opcion_unica,"Según la RT 54, ¿qué establece la premisa del ""Devengado""?",,Que la empresa seguirá funcionando indefinidamente,"Que los hechos se registran cuando ocurren, no solo cuando se pagan o cobran",Que todos los activos deben medirse siempre por su valor nominal,Que las ganancias solo se registran cuando el dinero ingresa al banco,,,2
+opcion_multiple,"En el Estado de Evolución del Patrimonio Neto, ¿qué elementos componen la sección ""Aporte de los Propietarios""?",,Capital y su ajuste,Prima de emisión,Aportes irrevocables,Ganancias reservadas,,,1|2|3
+opcion_unica,"Para los ejercicios iniciados a partir del 1 de enero de 2026, ¿cuál es el límite de ingresos del ejercicio anterior para que una entidad sea clasificada como ""Pequeña"" (EP) y acceda a simplificaciones?",,Hasta $4.500.000,Hasta $22.500.000.000,Hasta $4.500.000.000,Más de $22.500.000.000,,,3
+opcion_multiple,"Según las normas contables presentadas, ¿cuáles de los siguientes informes conforman los ""Estados Contables Básicos""?",,Estado de Situación Patrimonial,Estado de Evolución del Patrimonio Neto,Estado de Resultados,Registro de Asistencia del Personal,,,1|2|3
+opcion_unica,"En el Estado de Situación Patrimonial, ¿cuál es el plazo que se utiliza como base para clasificar a los activos y pasivos como ""Corrientes""?",,6 meses contados desde el cierre del ejercicio,"Un plazo de un año (doce meses), computado desde la fecha de cierre del período al que se refieren los estados contables",Un plazo de 5 años,El ciclo de vida útil de los bienes de uso,,,2
+opcion_multiple,"¿Qué requisitos deben cumplirse para que una partida del Estado de Resultados sea considerada un ""Resultado Extraordinario""?",,Deben ser atípicos y excepcionales,Deben ser de suceso infrecuente en el pasado,Deben ser generados de manera recurrente todos los meses por las ventas,Deben tener un comportamiento similar esperado en el futuro (poco frecuente),,,1|2|4
+opcion_unica,"¿Bajo qué condición principal la NUA permite que se reconozcan ""Previsiones"" en los estados contables?",,Siempre que exista una deuda comercial con proveedores,Solo se reconocen si hay una obligación probable y se puede medir,Siempre que se desee reducir el impuesto a las ganancias,Las previsiones ya no se reconocen bajo la RT 54,,,2
+opcion_multiple,"¿Qué partidas pueden formar parte de los ""Resultados Acumulados"" dentro del Patrimonio Neto?",,Reservas legales,Reservas estatutarias y voluntarias,Resultados No Asignados (RNA),Gastos de comercialización y administración,,,1|2|3
+opcion_unica,¿Qué es la RT 54 (NUA)?,,Una ley laboral que regula los salarios de los empleados,"La Norma Unificada Argentina de Contabilidad, que reemplaza y ordena las resoluciones anteriores para que no haya que saltar de un libro a otro",Una norma internacional de información financiera,Un reglamento exclusivo para el cálculo de impuestos a las ganancias,,,2
+opcion_multiple,¿Cuáles de las siguientes afirmaciones describen correctamente el tratamiento de los Bienes de Cambio y Activos Intangibles?,,Los Bienes de Cambio incluyen bienes destinados a la venta en el curso habitual del ente,"Los Bienes de Cambio se miden, por lo general, a su costo de reposición o VNR si están listos para la venta","Los Activos Intangibles representan franquicias, privilegios u otros similares",La naturaleza de los Activos Intangibles es que su valor no depende de producir ingresos en el futuro,,,1|2|3
+opcion_unica,¿Qué información suministra el Estado de Resultados?,,Los cambios en la variación de la suma del efectivo y sus equivalentes,La naturaleza y la cantidad de los recursos económicos en un momento determinado,"La información de las causas que generan el resultado atribuible a un período, mostrando pérdidas, ganancias y el resultado final",Los importes aportados por los integrantes de una sociedad,,,3
+opcion_multiple,"Dentro de la estructura del Pasivo se encuentran las ""Deudas"". ¿Cuáles de los siguientes son tipos de deudas mencionados en la normativa?",,Deudas comerciales/por pagar,Deudas laborales/sociales,Deudas fiscales/impositivas,Reservas estatutarias,,,1|2|3
+opcion_unica,"Para el rubro ""Bienes de Uso"", ¿qué modelos de medición permite elegir la NUA?",,Solo el Modelo de Costo,Solo el Valor Neto de Realización (VNR),"Permite elegir entre el ""Modelo de Costo"" o el ""Modelo de Revaluación""",Valor de reposición de forma exclusiva,,,3
+opcion_multiple,"En el Capítulo 1 de la RT 54 se definen los elementos que constituyen los ""ladrillos"" de los estados contables. ¿Cuáles de las siguientes opciones forman parte de estos elementos?",,Activos,Pasivos,Ajuste por inflación,Ingresos y Gastos,,,1|2|4
+opcion_unica,"Dentro de los Resultados Acumulados, ¿qué porcentaje de las ganancias líquidas exige la Ley General de Sociedades N° 19.550 que se destine a la ""Reserva Legal""?",,"No menor al 5%, hasta alcanzar el 20% del capital social","No menor al 10%, hasta alcanzar el 50% del capital social",El 20% anual obligatorio en todos los casos,El 100% de las ganancias si la asamblea lo decide,,,1
+opcion_multiple,"Según la RT 54 (Capítulo 2) sobre Procedimientos de Aplicación General, ¿qué herramientas o procedimientos se utilizan para medir el patrimonio y los resultados de manera uniforme?",,La medición de costos para calcular el valor de entrada,El uso de valores corrientes (como Valor Razonable y VNR),El procedimiento de ajuste por inflación para reflejar el poder adquisitivo real,La exclusión obligatoria de las Notas explicativas,,,1|2|3
+opcion_unica,"¿Qué elementos conforman el rubro ""Caja y Bancos"" dentro del Activo?",,Los derechos que posee el ente contra terceros de percibir sumas de dinero,Los bienes destinados a su utilización en la actividad principal del ente,"El dinero en efectivo en caja y bancos del país y del exterior, y otros valores de poder cancelatorio y liquidez similar",Las colocaciones efectuadas con el fin de obtener una renta (inversiones),,,3
+opcion_multiple,"¿Qué condiciones hacen que un activo deba clasificarse como ""Corriente""?",,Se espera que se conviertan en dinero (o equivalente) en el plazo de un año desde la fecha de cierre,Ya son dinero o equivalentes de dinero a la fecha de cierre,Son bienes intangibles con vida útil mayor a 10 años,Son deudas con vencimiento a largo plazo (mayor a un año),,,1|2
+opcion_unica,"En el Estado de Evolución del Patrimonio Neto, ¿cuáles son los dos grandes orígenes por los cuales deben clasificarse y resumirse las partidas integrantes?",,Activo Corriente y Pasivo Corriente,Aportes de los Propietarios y Resultados Acumulados,Resultados Ordinarios y Resultados Extraordinarios,Reservas Legales y Reservas Facultativas,,,2
+parrafo,"ACTIVIDAD PRÁCTICA INTEGRAL: ""BODEGA MOSQUITA""
+Realiza un Estado de Situación Patrimonial y un Estado de Resultados con los siguientes datos:
+1. Caja: $1.500.000
+2. Banco Galicia C/C: $4.200.000
+3. Deudores por Ventas: $3.500.000
+4. Vinos Blanco Dulce en Stock: $5.000.000
+5. Vinos Malbec en Stock: $8.500.000
+6. Inmuebles - Bodega en Luján de Cuyo: $35.000.000
+7. Depreciación Acumulada Inmuebles: $1.000.000
+8. Maquinaria y Tanques de Acero Inoxidable: $15.000.000
+9. Depreciación Acumulada Maquinaria: $1.500.000
+10. Proveedores: $4.000.000
+11. Sueldos y Jornales a Pagar: $2.500.000
+12. Préstamo Bancario BICE a Largo Plazo - Plazo de 36 meses: $8.000.000
+13. Hipoteca a Pagar con Proveedores de Maquinaria - Plazo de 48 meses: $10.000.000
+14. Capital Social: $30.000.000
+15. Resultados No Asignados: $5.000.000
+16. Ventas de Vinos Blanco Dulce: $25.000.000
+17. Ventas de Vinos Malbec: $40.000.000
+18. Costo de Mercaderías Vendidas - Vinos: $35.000.000
+19. Sueldos y Jornales: $8.000.000
+20. Gastos de Comercialización: $2.000.000",,,,,,,,
